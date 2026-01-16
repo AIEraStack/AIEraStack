@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  /* --- Brand & Theme Colors (Cyber Void) --- */
+  --bg-app: #050508;
+  --bg-card: #0f1016;
+  --bg-card-hover: #181922;
+  
+  --primary: #06b6d4;      /* Cyan-500 */
+  --primary-hover: #22d3ee;
+  --primary-glow: rgba(6, 182, 212, 0.4);
+  
+  --secondary: #d946ef;    /* Fuchsia-500 */
+  
+  /* Text */
+  --text-primary: #e2e8f0;
+  --text-muted: #94a3b8;
+  
+  /* Borders */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(6, 182, 212, 0.3);
+
+  /* --- LLM Brand Colors (Fixed) --- */
+  --color-openai: #10a37f;
+  --color-anthropic: #d4a574;
+  --color-google: #4285f4;
+  
+  /* --- Grade Colors (Fixed) --- */
+  --grade-a: #22c55e;
+  --grade-b: #84cc16;
+  --grade-c: #eab308;
+  --grade-d: #f97316;
+  --grade-f: #ef4444;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+/* --- Global Effects --- */
+
+/* Grid Background */
+.bg-grid {
+  background-size: 40px 40px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+/* Glowing Text */
+.text-glow {
+  text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+}
+
+/* Glass Card */
+.glass-card {
+  background: rgba(15, 16, 22, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.glass-card:hover {
+  background: rgba(24, 25, 34, 0.8);
+  border-color: var(--border-glow);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+/* Animated Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #22d3ee 0%, #e879f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}

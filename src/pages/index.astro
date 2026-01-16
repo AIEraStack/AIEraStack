@@ -1,0 +1,172 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { RepoSearch } from '../components/repo/RepoSearch';
+import { getFeaturedRepos, getReposByCategory } from '../lib/data-loader';
+import { CATEGORY_META, type RepoCategory } from '../lib/types';
+
+const featured = await getFeaturedRepos();
+
+const categoryOrder: RepoCategory[] = ['framework', 'ui-library', 'state-management', 'build-tool', 'database', 'api', 'ai-ml'];
+
+const categorizedRepos = await Promise.all(
+  categoryOrder.map(async (cat) => {
+    const repos = await getReposByCategory(cat);
+    const sorted = repos.sort((a, b) => {
+      const scoreA = a.scores['gpt-5.2-codex']?.overall || 0;
+      const scoreB = b.scores['gpt-5.2-codex']?.overall || 0;
+      return scoreB - scoreA;
+    });
+    return {
+      category: cat,
+      meta: CATEGORY_META[cat],
+      repos: sorted.slice(0, 5),
+    };
+  })
+);
+
+const examples = [
+  'tanstack/query',
+  'vercel/next.js',
+  'prisma/prisma',
+  'trpc/trpc',
+  'colinhacks/zod',
+];
+---
+
+<Layout title="AI Era Stack - Pick the right stack for the AI era">
+  <section class="relative pt-32 pb-20 px-6 overflow-hidden">
+    <div class="max-w-5xl mx-auto text-center relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-900/30 border border-cyan-500/30 text-cyan-400 text-sm font-medium mb-8 animate-fade-in">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+        </span>
+        AI-First Engineering
+      </div>
+      
+      <h1 class="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight leading-tight">
+        Pick your stack for the <br />
+        <span class="gradient-text text-glow">AI Era</span>
+      </h1>
+      
+      <p class="text-xl text-[var(--text-muted)] mb-12 max-w-2xl mx-auto leading-relaxed">
+        Stop using libraries Copilot doesn't know. <br />
+        Check which LLM knows your GitHub project best.
+      </p>
+
+      <div class="relative max-w-2xl mx-auto mb-8 group">
+        <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+        <div class="relative">
+          <RepoSearch client:load />
+        </div>
+      </div>
+
+      <p class="text-sm text-[var(--text-muted)]">
+        Try: 
+        {examples.map((ex, i) => (
+          <>
+            <a href={`/repo/${ex}`} class="text-cyan-400 hover:text-cyan-300 transition-colors mx-1">{ex}</a>
+            {i < examples.length - 1 && <span class="opacity-30">/</span>}
+          </>
+        ))}
+      </p>
+    </div>
+  </section>
+
+  <section class="py-24 px-6 relative">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex items-center justify-between mb-12">
+        <h2 class="text-3xl font-bold text-white">
+          <span class="gradient-text">Curated</span> Stacks
+        </h2>
+        <span class="text-[var(--text-muted)] text-sm">Scored for GPT-5.2-Codex</span>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {categorizedRepos.filter(c => c.repos.length > 0).map((cat) => (
+          <div class="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span class="text-2xl">{cat.meta.icon}</span>
+              {cat.meta.label}
+            </h3>
+            <div class="space-y-2">
+              {cat.repos.map((repo, i) => {
+                const score = repo.scores['gpt-5.2-codex']?.overall || 0;
+                return (
+                  <a
+                    href={`/repo/${repo.owner}/${repo.name}`}
+                    class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+                  >
+                    <div class="flex items-center gap-3">
+                      <span class={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'text-[var(--text-muted)] bg-white/5'}`}>
+                        {i + 1}
+                      </span>
+                      <span class="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate max-w-[120px]">
+                        {repo.name}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
+                          style={`width: ${score}%`}
+                        />
+                      </div>
+                      <span class="text-xs font-mono text-cyan-400 w-6">{score}</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="py-24 px-6 border-t border-[var(--border-color)] bg-[var(--bg-card)]/30">
+    <div class="max-w-7xl mx-auto">
+      <h2 class="text-3xl font-bold text-white mb-16 text-center">
+        How We <span class="gradient-text">Score</span>
+      </h2>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">⏰</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-cyan-400">Timeliness</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">35%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            Checks if the latest version was released before the LLM's knowledge cutoff.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📈</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-green-400">Popularity</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">30%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            More popular projects appear more frequently in LLM training data.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">🤖</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-purple-400">AI Friendly</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">20%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            Evaluates TypeScript support, documentation quality, and llms.txt.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">💬</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-pink-400">Community</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            Real developer feedback and issue health analysis.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

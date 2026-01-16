@@ -1,0 +1,26 @@
+{
+  "name": "app",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "fetch-data": "npx tsx scripts/fetch-data.ts",
+    "r2:download": "npx wrangler r2 object get aierastack-data/repos.json --file=src/data/repos.json",
+    "r2:upload": "npx wrangler r2 object put aierastack-data/repos.json --file=src/data/repos.json --content-type=application/json",
+    "update": "npm run fetch-data && npm run r2:upload"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.12",
+    "@astrojs/react": "^4.4.2",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^5.16.10",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18"
+  }
+}
