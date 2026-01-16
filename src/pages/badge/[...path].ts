@@ -105,7 +105,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   let owner = pathParts[0];
   let repo = pathParts[1];
   
-  // 移除 .svg 后缀（如果有）
+  // Remove .svg suffix if present
   if (repo.endsWith('.svg')) {
     repo = repo.slice(0, -4);
   }
@@ -114,7 +114,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   const env = (locals?.runtime?.env as CloudflareEnv | undefined) ?? {};
   
   try {
-    // 先尝试从缓存读取
+    // Try to read from cache first
     const cached = await getCachedRepo(env.DATA_BUCKET, `${owner}/${repo}`);
     
     if (cached && cached.scores && cached.scores[llmId]) {
@@ -126,7 +126,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       );
     }
     
-    // 如果缓存不存在，尝试调用 API 获取数据
+    // If cache doesn't exist, call API to fetch data
     const apiUrl = new URL('/api/repo', url.origin);
     apiUrl.searchParams.set('owner', owner);
     apiUrl.searchParams.set('name', repo);

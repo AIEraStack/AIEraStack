@@ -1,6 +1,6 @@
 # AI Era Stack
 
-**Stop using libraries Copilot doesn't know.**
+**Stop using libraries your AI doesn't know.**
 
 AI Era Stack helps developers evaluate how well LLMs (GPT, Claude, Gemini) understand GitHub projects—so you can pick the right stack for AI-assisted coding.
 

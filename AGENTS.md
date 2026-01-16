@@ -93,6 +93,7 @@ npm run fetch-data   # Fetch data for curated repos (needs GITHUB_TOKEN)
 
 ## Code Style
 
+- **English only** — All code, comments, commit messages, and documentation (except `docs/` folder) must be in English
 - TypeScript strict mode
 - React functional components with hooks
 - Astro components for static/SSR content
@@ -120,8 +121,31 @@ Global styles in `src/styles/global.css`, component styles via Tailwind classes.
 3. **Astro API routes** over separate Functions — unified codebase, TypeScript support, better DX
 4. **No auth** — public tool, no user accounts needed
 
+## Deployment
+
+Deployed via **GitHub Actions + Cloudflare Pages (Direct Upload)**:
+
+1. **Build workflow** (`.github/workflows/build.yml`):
+   - Downloads `repos.json` from R2
+   - Builds the project (`npm run build`)
+   - Deploys to Cloudflare Pages via `wrangler pages deploy`
+
+2. **Data update workflow** (`.github/workflows/update-data.yml`):
+   - Runs daily at 6:00 AM UTC
+   - Fetches fresh data for curated repos
+   - Updates R2 cache
+   - Triggers rebuild
+
+3. **Cloudflare Pages Settings**:
+   - Git integration: **Disabled** (using Direct Upload instead)
+   - R2 binding: `DATA_BUCKET` → `aierastack-data`
+   - Environment variables: Optional `GITHUB_TOKEN` for API rate limits
+
+See `DEPLOYMENT.md` for detailed configuration.
+
 ## Things to Avoid
 
+- **Don't use Chinese** — All codebase content must be in English (except internal `docs/` folder)
 - Don't add authentication complexity
 - Don't add a database (R2 JSON is fine)
 - Don't over-engineer the scoring algorithm
