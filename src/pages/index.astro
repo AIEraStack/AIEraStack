@@ -1,16 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { RepoSearch } from '../components/repo/RepoSearch';
+import { RotatingAIName } from '../components/ui/RotatingAIName';
 import { getFeaturedRepos, getReposByCategory } from '../lib/data-loader';
 import { CATEGORY_META, type RepoCategory } from '../lib/types';
 
-const featured = await getFeaturedRepos();
+export const prerender = false;
+
+const env = Astro.locals?.runtime?.env;
+
+const featured = await getFeaturedRepos(env);
 
 const categoryOrder: RepoCategory[] = ['framework', 'ui-library', 'state-management', 'build-tool', 'database', 'api', 'ai-ml'];
 
 const categorizedRepos = await Promise.all(
   categoryOrder.map(async (cat) => {
-    const repos = await getReposByCategory(cat);
+    const repos = await getReposByCategory(cat, env);
     const sorted = repos.sort((a, b) => {
       const scoreA = a.scores['gpt-5.2-codex']?.overall || 0;
       const scoreB = b.scores['gpt-5.2-codex']?.overall || 0;
@@ -50,7 +55,7 @@ const examples = [
       </h1>
       
       <p class="text-xl text-[var(--text-muted)] mb-12 max-w-2xl mx-auto leading-relaxed">
-        Stop using libraries Copilot doesn't know. <br />
+        Stop using libraries <RotatingAIName client:load /> doesn't know. <br />
         Check which LLM knows your GitHub project best.
       </p>
 
@@ -69,6 +74,8 @@ const examples = [
             {i < examples.length - 1 && <span class="opacity-30">/</span>}
           </>
         ))}
+        <span class="opacity-30 mx-2">|</span>
+        <a href="/compare" class="text-purple-400 hover:text-purple-300 transition-colors">Compare libraries →</a>
       </p>
     </div>
   </section>

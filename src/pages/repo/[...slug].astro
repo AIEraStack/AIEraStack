@@ -4,19 +4,21 @@ import { RepoAnalyzer } from '../../components/repo/RepoAnalyzer';
 import { getCachedRepo } from '../../lib/data-loader';
 import { LLMComparison } from '../../components/repo/LLMComparison';
 import { DimensionBreakdown } from '../../components/repo/DimensionBreakdown';
+import { BadgeCopy } from '../../components/repo/BadgeCopy';
 import { LLM_CONFIGS } from '../../lib/llm-configs';
 
 export const prerender = false;
 
 const { slug } = Astro.params;
 const parts = slug?.split('/') || [];
+const env = Astro.locals?.runtime?.env;
 
 if (parts.length !== 2) {
   return Astro.redirect('/');
 }
 
 const [owner, name] = parts;
-const cached = await getCachedRepo(owner, name);
+const cached = await getCachedRepo(owner, name, env);
 
 const pageTitle = cached 
   ? `${cached.repo.name} - AI Era Stack`
@@ -104,15 +106,17 @@ const currentLlm = LLM_CONFIGS.find(l => l.id === defaultLlmId);
 
         <div class="glass-card p-6 rounded-2xl">
           <h2 class="text-xl font-bold text-white mb-6">LLM Comparison</h2>
-          <LLMComparison scores={cached.scores} client:load />
+          <LLMComparison scores={cached.scores} bestLLMId={defaultLlmId} client:load />
         </div>
 
         {currentScore && (
           <div class="glass-card p-6 rounded-2xl">
             <h2 class="text-xl font-bold text-white mb-6">Score Breakdown for {currentLlm?.name}</h2>
-            <DimensionBreakdown score={currentScore} client:load />
+            <DimensionBreakdown score={currentScore} llmName={currentLlm?.name || defaultLlmId} client:load />
           </div>
         )}
+
+        <BadgeCopy owner={owner} name={name} client:load />
 
         <div class="glass-card p-4 rounded-xl">
           <div class="flex items-center justify-between text-xs text-[var(--text-muted)]">

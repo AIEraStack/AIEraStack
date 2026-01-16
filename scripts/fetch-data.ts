@@ -407,7 +407,11 @@ async function main() {
   }
   
   saveData(results);
-  console.log(`\nWrote ${Object.keys(results).length} repos to ${OUTPUT_PATH}`);
+  const totalRepos = Object.keys(results).length;
+  if (totalRepos === 0) {
+    throw new Error('No repo data generated. Check GITHUB_TOKEN or rate limits.');
+  }
+  console.log(`\nWrote ${totalRepos} repos to ${OUTPUT_PATH}`);
   
   if (errors.length > 0) {
     console.log(`\n${errors.length} errors occurred:`);
@@ -415,4 +419,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

@@ -4,9 +4,16 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  ogImage?: string;
 }
 
-const { title, description = 'Stop using libraries Copilot doesn\'t know. Pick the right stack for the AI era.' } = Astro.props;
+const { 
+  title, 
+  description = 'Stop using libraries your AI doesn\'t know. Pick the right stack for the AI era.',
+  ogImage = 'https://aierastack.com/og-image.png'
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
 ---
 
 <!doctype html>
@@ -19,7 +26,14 @@ const { title, description = 'Stop using libraries Copilot doesn\'t know. Pick t
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content="AI Era Stack" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
   </head>
   <body class="min-h-screen relative overflow-x-hidden">
@@ -58,7 +72,7 @@ const { title, description = 'Stop using libraries Copilot doesn\'t know. Pick t
     <footer class="border-t border-[var(--border-color)] mt-24 bg-[var(--bg-card)]">
       <div class="max-w-7xl mx-auto px-6 py-12 text-center">
         <p class="text-[var(--text-muted)] mb-2">
-          Stop using libraries Copilot doesn't know.
+          Stop using libraries your AI doesn't know.
         </p>
         <p class="text-sm text-[var(--text-muted)] opacity-60">
           © {new Date().getFullYear()} AI Era Stack. All rights reserved.

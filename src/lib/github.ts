@@ -32,11 +32,22 @@ export interface NpmInfo {
 
 const GITHUB_API = 'https://api.github.com';
 
-export async function fetchRepoInfo(owner: string, name: string): Promise<RepoInfo> {
+function getGithubHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'AIEraStack',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+export async function fetchRepoInfo(owner: string, name: string, token?: string): Promise<RepoInfo> {
   const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}`, {
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-    },
+    headers: getGithubHeaders(token),
   });
 
   if (!response.ok) {
@@ -63,11 +74,9 @@ export async function fetchRepoInfo(owner: string, name: string): Promise<RepoIn
   };
 }
 
-export async function fetchReleases(owner: string, name: string): Promise<ReleaseInfo[]> {
+export async function fetchReleases(owner: string, name: string, token?: string): Promise<ReleaseInfo[]> {
   const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/releases?per_page=10`, {
-    headers: {
-      Accept: 'application/vnd.github.v3+json',
-    },
+    headers: getGithubHeaders(token),
   });
 
   if (!response.ok) {
@@ -84,14 +93,12 @@ export async function fetchReleases(owner: string, name: string): Promise<Releas
   }));
 }
 
-export async function checkLlmsTxt(owner: string, name: string): Promise<boolean> {
+export async function checkLlmsTxt(owner: string, name: string, token?: string): Promise<boolean> {
   const paths = ['llms.txt', 'llms-full.txt', '.llms/llms.txt'];
 
   for (const path of paths) {
     const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/contents/${path}`, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-      },
+      headers: getGithubHeaders(token),
     });
 
     if (response.ok) {
