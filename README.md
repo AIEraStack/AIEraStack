@@ -38,7 +38,7 @@ AI Era Stack analyzes any GitHub project and scores it across 4 dimensions:
 
 | Layer | Choice |
 |-------|--------|
-| Framework | [Astro 5](https://astro.build) (hybrid mode) |
+| Framework | [Astro 5](https://astro.build) (server mode) |
 | UI | [React 19](https://react.dev) (islands) |
 | Styling | [Tailwind CSS 4](https://tailwindcss.com) |
 | Hosting | [Cloudflare Pages](https://pages.cloudflare.com) |

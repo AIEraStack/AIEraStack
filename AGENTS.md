@@ -10,7 +10,7 @@
 
 ## Tech Stack
 
-- **Framework**: Astro 5 (hybrid SSR/SSG)
+- **Framework**: Astro 5 (server-side rendering)
 - **UI**: React 19 (islands architecture)
 - **Styling**: Tailwind CSS 4
 - **Hosting**: Cloudflare Pages
@@ -50,8 +50,9 @@
 
 ## Architecture
 
-### Hybrid Rendering
+### Server-Side Rendering
 
+- **All pages**: Server-side rendered by default
 - **Cached repos** (59 curated projects): SSR from R2 data, SEO optimized
 - **Uncached repos**: CSR with React, fetches via `/api/repo` endpoint
 
@@ -116,7 +117,7 @@ Global styles in `src/styles/global.css`, component styles via Tailwind classes.
 
 ## Key Decisions
 
-1. **Hybrid rendering** over pure SSR or SSG — balances SEO for popular repos with flexibility for any repo
+1. **Server-side rendering** — all pages rendered on-demand with access to R2 data, optimal for dynamic content
 2. **R2 over database** — simpler, JSON-based, good enough for this use case
 3. **Astro API routes** over separate Functions — unified codebase, TypeScript support, better DX
 4. **No auth** — public tool, no user accounts needed
