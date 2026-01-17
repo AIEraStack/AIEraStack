@@ -25,7 +25,6 @@ jobs:
       - name: Download data from R2
         run: |
           npx wrangler r2 object get aierastack-data/index.json --file=src/data/index.json --remote || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/index.json
-          npx wrangler r2 object get aierastack-data/repos.json --file=src/data/repos.json --remote || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/repos.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

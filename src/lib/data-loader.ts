@@ -1,4 +1,4 @@
-import type { CachedRepoData, DataStore, RepoCategory, RepoIndex, RepoIndexEntry } from './types';
+import type { CachedRepoData, RepoCategory, RepoIndex, RepoIndexEntry } from './types';
 import type { RepoScore } from './scoring';
 
 interface R2Object {
@@ -14,28 +14,12 @@ export interface DataEnv {
   DATA_BUCKET?: R2Bucket;
 }
 
-let dataStore: DataStore | null = null;
 let repoIndex: RepoIndex | null = null;
-
-function isDataStore(value: unknown): value is DataStore {
-  if (!value || typeof value !== 'object') return false;
-  const store = value as { repos?: unknown };
-  return typeof store.repos === 'object' && store.repos !== null;
-}
 
 function isRepoIndex(value: unknown): value is RepoIndex {
   if (!value || typeof value !== 'object') return false;
   const index = value as { repos?: unknown };
   return typeof index.repos === 'object' && index.repos !== null;
-}
-
-// Load from old monolithic repos.json (backward compatibility)
-async function loadFromR2Legacy(env?: DataEnv): Promise<DataStore | null> {
-  if (!env?.DATA_BUCKET) return null;
-  const object = await env.DATA_BUCKET.get('repos.json');
-  if (!object) return null;
-  const data = await object.json();
-  return isDataStore(data) ? data : null;
 }
 
 // Load from new split architecture: index.json
@@ -55,6 +39,16 @@ async function loadRepoFromR2(owner: string, name: string, env?: DataEnv): Promi
   if (!object) return null;
   const data = await object.json();
   return data as CachedRepoData;
+}
+
+async function loadRepoFromLocal(owner: string, name: string): Promise<CachedRepoData | null> {
+  try {
+    const fileUrl = new URL(`../data/repos/${owner}/${name}.json`, import.meta.url);
+    const module = await import(/* @vite-ignore */ fileUrl.href);
+    return module.default as CachedRepoData;
+  } catch {
+    return null;
+  }
 }
 
 // Save individual repo to R2
@@ -98,97 +92,20 @@ export async function getRepoIndex(env?: DataEnv): Promise<RepoIndex> {
     // ignore and fall back
   }
 
-  // Try loading legacy format and convert
-  const legacyStore = await loadFromR2Legacy(env);
-  if (legacyStore) {
-    const index = convertDataStoreToIndex(legacyStore);
-    repoIndex = index;
-    return index;
-  }
-
-  // Try local file as fallback
-  try {
-    const data = await import('../data/repos.json');
-    const store = data.default as DataStore;
-    const index = convertDataStoreToIndex(store);
-    repoIndex = index;
-    return index;
-  } catch {
-    return { version: 1, generatedAt: new Date().toISOString(), repos: {} };
-  }
+  return { version: 1, generatedAt: new Date().toISOString(), repos: {} };
 }
 
-// Convert legacy DataStore to new RepoIndex format
-function convertDataStoreToIndex(store: DataStore): RepoIndex {
-  const indexRepos: Record<string, RepoIndexEntry> = {};
-  
-  for (const [key, cachedData] of Object.entries(store.repos)) {
-    // Find best score across all LLMs
-    let bestScore = 0;
-    let bestGrade = 'F';
-    
-    const scoreEntries = Object.values(cachedData.scores) as RepoScore[];
-    for (const llmScores of scoreEntries) {
-      const score = llmScores.overall || 0;
-      const grade = llmScores.grade || 'F';
-      if (score > bestScore) {
-        bestScore = score;
-        bestGrade = grade;
-      }
-    }
-    
-    indexRepos[key] = {
-      owner: cachedData.owner,
-      name: cachedData.name,
-      fullName: cachedData.fullName,
-      category: cachedData.category,
-      featured: cachedData.featured,
-      stars: cachedData.repo.stars,
-      language: cachedData.repo.language,
-      description: cachedData.repo.description,
-      bestScore,
-      bestGrade,
-      updatedAt: cachedData.repo.updatedAt,
-      fetchedAt: cachedData.fetchedAt,
-    };
-  }
-  
-  return {
-    version: store.version,
-    generatedAt: store.generatedAt,
-    repos: indexRepos,
-  };
-}
-
-// Get DataStore (backward compatibility - constructs from index + individual repos)
-export async function getDataStore(env?: DataEnv): Promise<DataStore> {
-  // Try loading legacy format first
-  const r2Store = await loadFromR2Legacy(env);
-  if (r2Store) {
-    dataStore = r2Store;
-    return r2Store;
-  }
-
-  if (dataStore) return dataStore;
-
-  try {
-    const data = await import('../data/repos.json');
-    dataStore = data.default as DataStore;
-    return dataStore;
-  } catch {
-    return { version: 1, generatedAt: new Date().toISOString(), repos: {} };
-  }
-}
-
-// Get cached repo - tries R2 split format first, then falls back to legacy
+// Get cached repo - tries R2 split format first, then local repo files
 export async function getCachedRepo(owner: string, name: string, env?: DataEnv): Promise<CachedRepoData | null> {
   // Try new split format first
   const repoData = await loadRepoFromR2(owner, name, env);
   if (repoData) return repoData;
-  
-  // Fall back to legacy format
-  const store = await getDataStore(env);
-  return store.repos[`${owner}/${name}`] || null;
+
+  if (!env?.DATA_BUCKET) {
+    return loadRepoFromLocal(owner, name);
+  }
+
+  return null;
 }
 
 // Get all cached repos from index

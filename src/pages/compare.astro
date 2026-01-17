@@ -22,21 +22,17 @@ const repoDataPromises = repoSlugs.map(async (slug) => {
 });
 
 const repos = await Promise.all(repoDataPromises);
-const validRepos = repos.filter(r => r.data !== null);
 
-const compareRepos = validRepos.map(r => ({
+const compareRepos = repos.map(r => ({
   slug: r.slug,
   owner: r.owner,
   name: r.name,
-  description: r.data?.repo.description || '',
-  stars: r.data?.repo.stars || 0,
-  forks: r.data?.repo.forks || 0,
-  weeklyDownloads: r.data?.npmInfo?.weeklyDownloads || null,
-  scores: r.data?.scores || {},
+  initialData: r.data ?? null,
 }));
 
-const pageTitle = validRepos.length > 0 
-  ? `Compare ${validRepos.map(r => r.name).join(' vs ')} - AI Era Stack`
+const titleNames = compareRepos.map(r => r.name).filter(Boolean);
+const pageTitle = titleNames.length > 0 
+  ? `Compare ${titleNames.join(' vs ')} - AI Era Stack`
   : 'Compare Libraries - AI Era Stack';
 ---
 
@@ -75,7 +71,7 @@ const pageTitle = validRepos.length > 0
       </p>
     </form>
 
-    {validRepos.length === 0 && reposParam && (
+    {repoSlugs.length === 0 && reposParam && (
       <div class="glass-card p-8 rounded-2xl text-center">
         <div class="text-4xl mb-4">🔍</div>
         <h2 class="text-xl font-bold text-white mb-2">No repositories found</h2>
@@ -85,7 +81,7 @@ const pageTitle = validRepos.length > 0
       </div>
     )}
 
-    {validRepos.length === 0 && !reposParam && (
+    {repoSlugs.length === 0 && !reposParam && (
       <div class="glass-card p-8 rounded-2xl">
         <h2 class="text-xl font-bold text-white mb-4">Popular Comparisons</h2>
         <div class="grid md:grid-cols-2 gap-4">
@@ -109,7 +105,7 @@ const pageTitle = validRepos.length > 0
       </div>
     )}
 
-    {validRepos.length > 0 && (
+    {repoSlugs.length > 0 && (
       <CompareSection repos={compareRepos} client:load />
     )}
   </div>

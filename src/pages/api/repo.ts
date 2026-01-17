@@ -50,7 +50,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const curatedMatch = findCuratedRepo(owner, name);
   const cacheKey = curatedMatch ? `${curatedMatch.owner}/${curatedMatch.name}` : `${owner}/${name}`;
 
-  // Check cache using new loader (supports both split and legacy formats)
+  // Check cache using split architecture
   const cached = await getCachedRepo(
     curatedMatch?.owner || owner,
     curatedMatch?.name || name,

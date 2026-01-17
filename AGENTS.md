@@ -127,7 +127,7 @@ Global styles in `src/styles/global.css`, component styles via Tailwind classes.
 Deployed via **GitHub Actions + Cloudflare Pages (Direct Upload)**:
 
 1. **Build workflow** (`.github/workflows/build.yml`):
-   - Downloads `repos.json` from R2
+   - Downloads `index.json` from R2
    - Builds the project (`npm run build`)
    - Deploys to Cloudflare Pages via `wrangler pages deploy`
 

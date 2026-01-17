@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import type { CachedRepoData, DataStore } from '../../lib/types';
+import { getCachedRepo } from '../../lib/data-loader';
 
 interface R2Object {
   json(): Promise<unknown>;
@@ -22,28 +22,6 @@ const GRADE_COLORS = {
 };
 
 const DEFAULT_LLM = 'gpt-5.2-codex';
-
-function isDataStore(value: unknown): value is DataStore {
-  if (!value || typeof value !== 'object') return false;
-  const store = value as { repos?: unknown };
-  return typeof store.repos === 'object' && store.repos !== null;
-}
-
-async function getCachedRepo(bucket: R2Bucket | undefined, key: string): Promise<CachedRepoData | null> {
-  if (!bucket) return null;
-  
-  try {
-    const object = await bucket.get('repos.json');
-    if (!object) return null;
-    
-    const data = await object.json();
-    if (!isDataStore(data)) return null;
-    
-    return data.repos[key] || null;
-  } catch {
-    return null;
-  }
-}
 
 function badgeResponse(label: string, message: string, color: string): Response {
   const svg = generateBadgeSVG(label, message, color);
@@ -115,7 +93,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
   
   try {
     // Try to read from cache first
-    const cached = await getCachedRepo(env.DATA_BUCKET, `${owner}/${repo}`);
+    const cached = await getCachedRepo(owner, repo, { DATA_BUCKET: env.DATA_BUCKET });
     
     if (cached && cached.scores && cached.scores[llmId]) {
       const score = cached.scores[llmId];

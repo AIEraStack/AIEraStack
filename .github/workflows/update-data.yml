@@ -28,10 +28,7 @@ jobs:
 
       - name: Download existing data from R2
         run: |
-          # Download legacy repos.json
-          npx wrangler r2 object get aierastack-data/repos.json --file=src/data/repos.json --remote || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/repos.json
-          
-          # Download index.json (new architecture)
+          # Download index.json
           npx wrangler r2 object get aierastack-data/index.json --file=src/data/index.json --remote || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/index.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -44,10 +41,7 @@ jobs:
 
       - name: Upload to R2
         run: |
-          # Upload legacy repos.json
-          npx wrangler r2 object put aierastack-data/repos.json --file=src/data/repos.json --content-type=application/json --remote
-          
-          # Upload index.json (new architecture)
+          # Upload index.json
           if [ -f src/data/index.json ]; then
             npx wrangler r2 object put aierastack-data/index.json --file=src/data/index.json --content-type=application/json --remote
           fi

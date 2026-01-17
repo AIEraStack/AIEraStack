@@ -10,15 +10,14 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
-    resolve: {
-      // Use the edge renderer to avoid MessageChannel in the Workers runtime.
-      alias: {
-        'react-dom/server': 'react-dom/server.edge',
+    build: {
+      // Ensure CJS dependencies are properly transformed to ESM during build.
+      commonjsOptions: {
+        transformMixedEsModules: true,
       },
     },
-    ssr: {
-      // Ensure SSR deps are fully inlined for Workers (no require/module at runtime).
-      noExternal: true,
-    },
+    // NOTE: No react-dom/server alias here.
+    // The Cloudflare adapter handles aliasing for production builds internally.
+    // In dev mode, Node.js loads react-dom/server natively (CJS is supported).
   },
 });

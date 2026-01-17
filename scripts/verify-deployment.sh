@@ -1,10 +1,19 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ -f "${ROOT_DIR}/.env" ]; then
+    set -a
+    . "${ROOT_DIR}/.env"
+    set +a
+fi
+
 # Deployment verification script
 # Usage: ./scripts/verify-deployment.sh [domain]
 # Example: ./scripts/verify-deployment.sh aierastack.pages.dev
 
-DOMAIN="${1:-aierastack.pages.dev}"
+DOMAIN="${1:-${DEPLOY_DOMAIN:-aierastack.pages.dev}}"
 BASE_URL="https://${DOMAIN}"
 
 echo "🔍 Verifying deployment: ${BASE_URL}"
@@ -97,7 +106,7 @@ else
     echo "💡 Troubleshooting tips:"
     echo "  1. Check Cloudflare Pages Functions logs"
     echo "  2. Verify R2 binding: DATA_BUCKET → aierastack-data"
-    echo "  3. Verify repos.json exists in R2"
+    echo "  3. Verify index.json and repos/ files exist in R2"
     echo "  4. Run Update Data workflow to refresh data"
     exit 1
 fi

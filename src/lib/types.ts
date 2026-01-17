@@ -19,7 +19,15 @@ export type RepoCategory =
   | 'database'
   | 'api'
   | 'ai-ml'
-  | 'utility';
+  | 'utility'
+  | 'python-web'
+  | 'python-ai'
+  | 'python-data'
+  | 'go'
+  | 'rust'
+  | 'devops'
+  | 'mobile'
+  | 'desktop';
 
 export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; description: string }> = {
   'framework': {
@@ -66,6 +74,46 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
     label: 'Utilities',
     icon: '🔧',
     description: 'General-purpose utility libraries',
+  },
+  'python-web': {
+    label: 'Python Web',
+    icon: '🐍',
+    description: 'Python web frameworks and APIs',
+  },
+  'python-ai': {
+    label: 'Python AI',
+    icon: '🧠',
+    description: 'Python AI/ML frameworks and tools',
+  },
+  'python-data': {
+    label: 'Python Data',
+    icon: '📊',
+    description: 'Python data science and analysis',
+  },
+  'go': {
+    label: 'Go',
+    icon: '🔷',
+    description: 'Go libraries and frameworks',
+  },
+  'rust': {
+    label: 'Rust',
+    icon: '🦀',
+    description: 'Rust libraries and frameworks',
+  },
+  'devops': {
+    label: 'DevOps',
+    icon: '🚀',
+    description: 'Infrastructure and deployment tools',
+  },
+  'mobile': {
+    label: 'Mobile',
+    icon: '📱',
+    description: 'Mobile development frameworks',
+  },
+  'desktop': {
+    label: 'Desktop',
+    icon: '🖥️',
+    description: 'Desktop application frameworks',
   },
 };
 

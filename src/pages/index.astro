@@ -11,7 +11,23 @@ const env = Astro.locals?.runtime?.env;
 
 const featured = await getFeaturedRepos(env);
 
-const categoryOrder: RepoCategory[] = ['framework', 'ui-library', 'state-management', 'build-tool', 'database', 'api', 'ai-ml'];
+const categoryOrder: RepoCategory[] = [
+  'framework', 
+  'ui-library', 
+  'state-management', 
+  'build-tool', 
+  'database', 
+  'api', 
+  'ai-ml',
+  'python-web',
+  'python-ai',
+  'python-data',
+  'go',
+  'rust',
+  'devops',
+  'mobile',
+  'desktop'
+];
 
 const categorizedRepos = await Promise.all(
   categoryOrder.map(async (cat) => {

@@ -1,11 +1,11 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import 'dotenv/config';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../src/data');
 const CURATED_PATH = join(DATA_DIR, 'curated-repos.json');
-const OUTPUT_PATH = join(DATA_DIR, 'repos.json'); // Legacy format for local fallback
 const INDEX_PATH = join(DATA_DIR, 'index.json');
 const REPOS_DIR = join(DATA_DIR, 'repos');
 
@@ -70,6 +70,35 @@ interface RepoIndexEntry {
   bestGrade: string;
   updatedAt: string;
   fetchedAt: string;
+}
+
+interface RepoScoreSummary {
+  overall: number;
+  grade: string;
+  [key: string]: unknown;
+}
+
+type ScoresByLlm = Record<string, RepoScoreSummary>;
+
+interface CachedRepoDataFile {
+  owner: string;
+  name: string;
+  fullName: string;
+  category: string;
+  featured: boolean;
+  repo: RepoInfo;
+  releases: ReleaseInfo[];
+  hasLlmsTxt: boolean;
+  npmPackage: string | null;
+  npmInfo: NpmPackageInfo | null;
+  scores: ScoresByLlm;
+  sources: {
+    github: string;
+    npm: string | null;
+    releases: string;
+  };
+  fetchedAt: string;
+  dataVersion: number;
 }
 
 const LLM_CONFIGS = [
@@ -220,8 +249,8 @@ function calculateScores(
   releases: ReleaseInfo[],
   npmInfo: NpmPackageInfo | null,
   hasLlmsTxt: boolean
-): Record<string, unknown> {
-  const scores: Record<string, unknown> = {};
+): ScoresByLlm {
+  const scores: ScoresByLlm = {};
   
   for (const llm of LLM_CONFIGS) {
     const cutoff = new Date(llm.knowledgeCutoff);
@@ -334,22 +363,57 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function loadExistingData(): Record<string, unknown> {
+function loadExistingIndex(): Record<string, RepoIndexEntry> {
   try {
-    const data = JSON.parse(readFileSync(OUTPUT_PATH, 'utf-8'));
-    return data.repos || {};
+    const data = JSON.parse(readFileSync(INDEX_PATH, 'utf-8')) as { repos?: Record<string, RepoIndexEntry> };
+    if (!data || typeof data !== 'object') return {};
+    if (!data.repos || typeof data.repos !== 'object') return {};
+    return data.repos;
   } catch {
     return {};
   }
 }
 
-function saveData(results: Record<string, unknown>) {
-  const dataStore = {
-    version: DATA_VERSION,
-    generatedAt: new Date().toISOString(),
-    repos: results,
+function readRepoFile(owner: string, name: string): CachedRepoDataFile | null {
+  const filePath = join(REPOS_DIR, owner, `${name}.json`);
+  if (!existsSync(filePath)) return null;
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf-8')) as CachedRepoDataFile;
+  } catch {
+    return null;
+  }
+}
+
+function getBestScore(scores: ScoresByLlm): { bestScore: number; bestGrade: string } {
+  let bestScore = 0;
+  let bestGrade = 'F';
+  for (const entry of Object.values(scores)) {
+    const score = typeof entry.overall === 'number' ? entry.overall : 0;
+    const grade = typeof entry.grade === 'string' ? entry.grade : 'F';
+    if (score > bestScore) {
+      bestScore = score;
+      bestGrade = grade;
+    }
+  }
+  return { bestScore, bestGrade };
+}
+
+function buildIndexEntry(data: CachedRepoDataFile): RepoIndexEntry {
+  const { bestScore, bestGrade } = getBestScore(data.scores);
+  return {
+    owner: data.owner,
+    name: data.name,
+    fullName: data.fullName,
+    category: data.category,
+    featured: data.featured,
+    stars: data.repo.stars,
+    language: data.repo.language,
+    description: data.repo.description,
+    bestScore,
+    bestGrade,
+    updatedAt: data.repo.updatedAt,
+    fetchedAt: data.fetchedAt,
   };
-  writeFileSync(OUTPUT_PATH, JSON.stringify(dataStore, null, 2));
 }
 
 // Save individual repo file in split architecture
@@ -378,9 +442,8 @@ async function main() {
   
   console.log(`Found ${curatedRepos.length} curated repos`);
   console.log('Using split architecture: index.json + individual repo files');
-  
-  const results: Record<string, unknown> = loadExistingData();
-  const index: Record<string, RepoIndexEntry> = {};
+
+  const index: Record<string, RepoIndexEntry> = { ...loadExistingIndex() };
   const errors: string[] = [];
   const skipExisting = process.argv.includes('--skip-existing');
   
@@ -388,9 +451,15 @@ async function main() {
     const curated = curatedRepos[i];
     const key = `${curated.owner}/${curated.name}`;
     
-    if (skipExisting && results[key]) {
-      console.log(`[${i + 1}/${curatedRepos.length}] Skipping ${key} (cached)`);
-      continue;
+    if (skipExisting) {
+      const existingRepo = readRepoFile(curated.owner, curated.name);
+      if (existingRepo) {
+        if (!index[key]) {
+          index[key] = buildIndexEntry(existingRepo);
+        }
+        console.log(`[${i + 1}/${curatedRepos.length}] Skipping ${key} (cached)`);
+        continue;
+      }
     }
     
     console.log(`[${i + 1}/${curatedRepos.length}] Fetching ${key}...`);
@@ -409,7 +478,8 @@ async function main() {
       
       const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt);
       
-      const repoData = {
+      const fetchedAt = new Date().toISOString();
+      const repoData: CachedRepoDataFile = {
         owner: curated.owner,
         name: curated.name,
         fullName: repo.fullName,
@@ -431,46 +501,17 @@ async function main() {
           releases: `https://github.com/${key}/releases`,
         },
         
-        fetchedAt: new Date().toISOString(),
+        fetchedAt,
         dataVersion: DATA_VERSION,
       };
       
-      // Save to legacy format (for backward compatibility)
-      results[key] = repoData;
-      
       // Save individual repo file (new architecture)
       saveRepoFile(curated.owner, curated.name, repoData);
-      
-      // Calculate best score for index
-      let bestScore = 0;
-      let bestGrade = 'F';
-      for (const llmScores of Object.values(scores)) {
-        const score = (llmScores as any).overall || 0;
-        const grade = (llmScores as any).grade || 'F';
-        if (score > bestScore) {
-          bestScore = score;
-          bestGrade = grade;
-        }
-      }
-      
+
       // Add to index
-      index[key] = {
-        owner: curated.owner,
-        name: curated.name,
-        fullName: repo.fullName,
-        category: curated.category,
-        featured: curated.featured || false,
-        stars: repo.stars,
-        language: repo.language,
-        description: repo.description,
-        bestScore,
-        bestGrade,
-        updatedAt: repo.updatedAt,
-        fetchedAt: new Date().toISOString(),
-      };
+      index[key] = buildIndexEntry(repoData);
       
       // Save after each repo to avoid data loss
-      saveData(results);
       saveIndexFile(index);
       
       await sleep(100);
@@ -482,16 +523,14 @@ async function main() {
   }
   
   // Final save
-  saveData(results);
   saveIndexFile(index);
   
-  const totalRepos = Object.keys(results).length;
+  const totalRepos = Object.keys(index).length;
   if (totalRepos === 0) {
     throw new Error('No repo data generated. Check GITHUB_TOKEN or rate limits.');
   }
   
   console.log(`\n✅ Success!`);
-  console.log(`  - Legacy format: ${OUTPUT_PATH} (${totalRepos} repos)`);
   console.log(`  - Index file: ${INDEX_PATH} (${Object.keys(index).length} entries)`);
   console.log(`  - Individual files: ${REPOS_DIR}/ (${Object.keys(index).length} files)`);
   

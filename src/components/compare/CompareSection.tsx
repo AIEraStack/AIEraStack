@@ -1,20 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LLM_CONFIGS, getLLMById } from '../../lib/llm-configs';
-import type { AllLLMScores } from '../../lib/scoring';
+import type { CachedRepoData } from '../../lib/types';
 
-interface RepoData {
+interface RepoInput {
   slug: string;
   owner: string;
   name: string;
-  description: string;
-  stars: number;
-  forks: number;
-  weeklyDownloads: number | null;
-  scores: AllLLMScores;
+  initialData: CachedRepoData | null;
+}
+
+interface RepoState {
+  slug: string;
+  owner: string;
+  name: string;
+  data: CachedRepoData | null;
+  status: 'loading' | 'success' | 'error';
+  error: string;
 }
 
 interface CompareSectionProps {
-  repos: RepoData[];
+  repos: RepoInput[];
 }
 
 function getGradeClass(grade: string): string {
@@ -45,15 +50,75 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
+function toRepoState(repo: RepoInput): RepoState {
+  return {
+    slug: repo.slug,
+    owner: repo.owner,
+    name: repo.name,
+    data: repo.initialData,
+    status: repo.initialData ? 'success' : 'loading',
+    error: '',
+  };
+}
+
 export function CompareSection({ repos }: CompareSectionProps) {
   const [selectedLLMId, setSelectedLLMId] = useState('gpt-5.2-codex');
+  const [repoState, setRepoState] = useState<RepoState[]>(() => repos.map(toRepoState));
   const selectedLLM = getLLMById(selectedLLMId);
 
-  const sortedRepos = [...repos].sort((a, b) => {
-    const scoreA = a.scores[selectedLLMId]?.overall || 0;
-    const scoreB = b.scores[selectedLLMId]?.overall || 0;
+  useEffect(() => {
+    const initialState = repos.map(toRepoState);
+    setRepoState(initialState);
+
+    let cancelled = false;
+    const missing = initialState.filter((repo) => !repo.data);
+    if (missing.length === 0) return;
+
+    missing.forEach(async (repo) => {
+      try {
+        const response = await fetch(
+          `/api/repo?owner=${encodeURIComponent(repo.owner)}&name=${encodeURIComponent(repo.name)}`
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const message = errorData.error || `Failed to fetch: ${response.status}`;
+          throw new Error(message);
+        }
+
+        const repoData: CachedRepoData = await response.json();
+        if (cancelled) return;
+
+        setRepoState((prev) =>
+          prev.map((item) =>
+            item.slug === repo.slug
+              ? { ...item, data: repoData, status: 'success', error: '' }
+              : item
+          )
+        );
+      } catch (err) {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : 'Failed to load repository data';
+        setRepoState((prev) =>
+          prev.map((item) =>
+            item.slug === repo.slug ? { ...item, status: 'error', error: message } : item
+          )
+        );
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [repos]);
+
+  const sortedRepos = [...repoState].sort((a, b) => {
+    const scoreA = a.data?.scores[selectedLLMId]?.overall ?? -1;
+    const scoreB = b.data?.scores[selectedLLMId]?.overall ?? -1;
     return scoreB - scoreA;
   });
+
+  const bestRepoSlug = sortedRepos.find((repo) => repo.data?.scores[selectedLLMId])?.slug;
 
   return (
     <div className="space-y-6">
@@ -86,11 +151,25 @@ export function CompareSection({ repos }: CompareSectionProps) {
 
       <div
         className="grid gap-4"
-        style={{ gridTemplateColumns: `repeat(${Math.min(repos.length, 3)}, 1fr)` }}
+        style={{ gridTemplateColumns: `repeat(${Math.min(sortedRepos.length, 3)}, 1fr)` }}
       >
-        {sortedRepos.map((repo, index) => {
-          const score = repo.scores[selectedLLMId];
-          const isWinner = index === 0;
+        {sortedRepos.map((repo) => {
+          const repoData = repo.data;
+          const score = repoData?.scores[selectedLLMId];
+          const isWinner = bestRepoSlug === repo.slug;
+          const displayName = repoData?.repo.name ?? repo.name;
+          const displayOwner = repoData?.repo.owner ?? repo.owner;
+          const description = repoData?.repo.description?.trim();
+          const descriptionText =
+            description ||
+            (repo.status === 'error'
+              ? repo.error || 'Failed to load repository data'
+              : repo.status === 'loading'
+                ? 'Fetching repository data...'
+                : 'No description');
+          const starsText = repoData ? formatNumber(repoData.repo.stars) : '—';
+          const forksText = repoData ? formatNumber(repoData.repo.forks) : '—';
+          const weeklyDownloads = repoData?.npmInfo?.weeklyDownloads ?? null;
 
           return (
             <a
@@ -104,9 +183,9 @@ export function CompareSection({ repos }: CompareSectionProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     {isWinner && <span className="text-yellow-400">🏆</span>}
-                    <h3 className="text-lg font-bold text-white">{repo.name}</h3>
+                    <h3 className="text-lg font-bold text-white">{displayName}</h3>
                   </div>
-                  <p className="text-sm text-slate-400">{repo.owner}</p>
+                  <p className="text-sm text-slate-400">{displayOwner}</p>
                 </div>
                 {score && (
                   <div className={`px-3 py-2 rounded-xl border ${getGradeBg(score.grade)} text-center`}>
@@ -121,7 +200,7 @@ export function CompareSection({ repos }: CompareSectionProps) {
               </div>
 
               <p className="text-sm text-slate-400 mb-4 line-clamp-2">
-                {repo.description || 'No description'}
+                {descriptionText}
               </p>
 
               {score && (
@@ -134,10 +213,10 @@ export function CompareSection({ repos }: CompareSectionProps) {
               )}
 
               <div className="flex gap-3 mt-4 pt-4 border-t border-white/5 text-xs text-slate-400">
-                <span>⭐ {formatNumber(repo.stars)}</span>
-                <span>🍴 {formatNumber(repo.forks)}</span>
-                {repo.weeklyDownloads && (
-                  <span>📦 {formatNumber(repo.weeklyDownloads)}/wk</span>
+                <span>⭐ {starsText}</span>
+                <span>🍴 {forksText}</span>
+                {repoData && weeklyDownloads !== null && (
+                  <span>📦 {formatNumber(weeklyDownloads)}/wk</span>
                 )}
               </div>
             </a>
@@ -162,30 +241,41 @@ export function CompareSection({ repos }: CompareSectionProps) {
               </tr>
             </thead>
             <tbody>
-              {sortedRepos.map((repo, index) => {
-                const score = repo.scores[selectedLLMId];
+              {sortedRepos.map((repo) => {
+                const repoData = repo.data;
+                const score = repoData?.scores[selectedLLMId];
+                const displayName = repoData?.repo.name ?? repo.name;
+                const overallText = score ? `${score.grade} · ${score.overall}` : '—';
+                const overallClass = score ? getGradeClass(score.grade) : 'text-slate-500';
+                const cellClass = score ? 'text-white' : 'text-slate-500';
                 return (
                   <tr key={repo.slug} className="border-b border-white/5">
                     <td className="py-3 px-2">
                       <div className="flex items-center gap-2">
-                        {index === 0 && <span className="text-yellow-400">🏆</span>}
+                        {bestRepoSlug === repo.slug && <span className="text-yellow-400">🏆</span>}
                         <a
                           href={`/repo/${repo.slug}`}
                           className="text-white hover:text-cyan-400 transition-colors"
                         >
-                          {repo.name}
+                          {displayName}
                         </a>
                       </div>
                     </td>
                     <td className="text-center py-3 px-2">
-                      <span className={`font-bold ${getGradeClass(score?.grade || 'F')}`}>
-                        {score?.grade} · {score?.overall}
-                      </span>
+                      <span className={`font-bold ${overallClass}`}>{overallText}</span>
                     </td>
-                    <td className="text-center py-3 px-2 text-white">{score?.timeliness.score}</td>
-                    <td className="text-center py-3 px-2 text-white">{score?.popularity.score}</td>
-                    <td className="text-center py-3 px-2 text-white">{score?.aiFriendliness.score}</td>
-                    <td className="text-center py-3 px-2 text-white">{score?.community.score}</td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.timeliness.score : '-'}
+                    </td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.popularity.score : '-'}
+                    </td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.aiFriendliness.score : '-'}
+                    </td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.community.score : '-'}
+                    </td>
                   </tr>
                 );
               })}
@@ -223,33 +313,37 @@ export function CompareSection({ repos }: CompareSectionProps) {
               </tr>
             </thead>
             <tbody>
-              {repos.map((repo) => (
-                <tr key={repo.slug} className="border-b border-white/5">
-                  <td className="py-3 px-2">
-                    <a
-                      href={`/repo/${repo.slug}`}
-                      className="text-white hover:text-cyan-400 transition-colors"
-                    >
-                      {repo.name}
-                    </a>
-                  </td>
-                  {LLM_CONFIGS.map((llm) => {
-                    const score = repo.scores[llm.id];
-                    return (
-                      <td
-                        key={llm.id}
-                        className={`text-center py-3 px-2 ${
-                          llm.id === selectedLLMId ? 'bg-white/5' : ''
-                        }`}
+              {sortedRepos.map((repo) => {
+                const repoData = repo.data;
+                const displayName = repoData?.repo.name ?? repo.name;
+                return (
+                  <tr key={repo.slug} className="border-b border-white/5">
+                    <td className="py-3 px-2">
+                      <a
+                        href={`/repo/${repo.slug}`}
+                        className="text-white hover:text-cyan-400 transition-colors"
                       >
-                        <span className={`font-medium ${getGradeClass(score?.grade || 'F')}`}>
-                          {score?.overall || '-'}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                        {displayName}
+                      </a>
+                    </td>
+                    {LLM_CONFIGS.map((llm) => {
+                      const score = repoData?.scores[llm.id];
+                      const scoreText = score?.overall ?? '-';
+                      const scoreClass = score ? getGradeClass(score.grade) : 'text-slate-500';
+                      return (
+                        <td
+                          key={llm.id}
+                          className={`text-center py-3 px-2 ${
+                            llm.id === selectedLLMId ? 'bg-white/5' : ''
+                          }`}
+                        >
+                          <span className={`font-medium ${scoreClass}`}>{scoreText}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
