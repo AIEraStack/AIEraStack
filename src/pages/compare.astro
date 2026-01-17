@@ -2,8 +2,22 @@
 import Layout from '../layouts/Layout.astro';
 import { getCachedRepo } from '../lib/data-loader';
 import { CompareSection } from '../components/compare/CompareSection';
+import type { CachedRepoData } from '../lib/types';
 
 export const prerender = false;
+
+async function fetchRepoFromApi(owner: string, name: string, request: Request): Promise<CachedRepoData | null> {
+  try {
+    const apiUrl = new URL('/api/repo', request.url);
+    apiUrl.searchParams.set('owner', owner);
+    apiUrl.searchParams.set('name', name);
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    return (await response.json()) as CachedRepoData;
+  } catch {
+    return null;
+  }
+}
 
 const url = new URL(Astro.request.url);
 const reposParam = url.searchParams.get('repos') || '';
@@ -17,8 +31,11 @@ const repoSlugs = reposParam
 
 const repoDataPromises = repoSlugs.map(async (slug) => {
   const [owner, name] = slug.split('/');
-  const cached = await getCachedRepo(owner, name, env);
-  return { slug, owner, name, data: cached };
+  let data = await getCachedRepo(owner, name, env);
+  if (!data) {
+    data = await fetchRepoFromApi(owner, name, Astro.request);
+  }
+  return { slug, owner, name, data };
 });
 
 const repos = await Promise.all(repoDataPromises);

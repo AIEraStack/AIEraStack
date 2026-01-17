@@ -2,8 +2,22 @@
 import Layout from '../../layouts/Layout.astro';
 import { RepoAnalyzer } from '../../components/repo/RepoAnalyzer';
 import { getCachedRepo } from '../../lib/data-loader';
+import type { CachedRepoData } from '../../lib/types';
 
 export const prerender = false;
+
+async function fetchRepoFromApi(owner: string, name: string, request: Request): Promise<CachedRepoData | null> {
+  try {
+    const apiUrl = new URL('/api/repo', request.url);
+    apiUrl.searchParams.set('owner', owner);
+    apiUrl.searchParams.set('name', name);
+    const response = await fetch(apiUrl);
+    if (!response.ok) return null;
+    return (await response.json()) as CachedRepoData;
+  } catch {
+    return null;
+  }
+}
 
 const { slug } = Astro.params;
 const parts = slug?.split('/') || [];
@@ -15,13 +29,17 @@ if (parts.length !== 2) {
 
 const [owner, name] = parts;
 const cached = await getCachedRepo(owner, name, env);
+let initialData = cached;
+if (!initialData) {
+  initialData = await fetchRepoFromApi(owner, name, Astro.request);
+}
 
-const pageTitle = cached 
-  ? `${cached.repo.name} - AI Era Stack`
+const pageTitle = initialData 
+  ? `${initialData.repo.name} - AI Era Stack`
   : `${owner}/${name} - AI Era Stack`;
 
-const pageDescription = cached?.repo.description 
-  ? `${cached.repo.description} - See how well AI models understand this project.`
+const pageDescription = initialData?.repo.description 
+  ? `${initialData.repo.description} - See how well AI models understand this project.`
   : `See how well AI models understand ${owner}/${name}`;
 
 const defaultLlmId = 'gpt-5.2-codex';
@@ -37,7 +55,7 @@ const defaultLlmId = 'gpt-5.2-codex';
       client:load
       owner={owner}
       name={name}
-      initialData={cached}
+      initialData={initialData}
       defaultLLMId={defaultLlmId}
     />
   </div>
