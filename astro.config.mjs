@@ -4,11 +4,25 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import cloudflare from '@astrojs/cloudflare';
 
+/** @type {typeof globalThis & { process?: { env?: { NODE_ENV?: string } } }} */
+const globalWithProcess = globalThis;
+const isProd = globalWithProcess.process?.env?.NODE_ENV === 'production';
+const reactServerAlias = isProd
+  ? [
+      // Ensure Cloudflare Workers uses the edge server entrypoint for React SSR.
+      // This avoids the browser build which depends on MessageChannel.
+      { find: 'react-dom/server', replacement: 'react-dom/server.edge' },
+    ]
+  : [];
+
 export default defineConfig({
   output: 'server',
   adapter: cloudflare(),
   integrations: [react()],
   vite: {
+    resolve: {
+      alias: reactServerAlias,
+    },
     plugins: [tailwindcss()],
     build: {
       // Ensure CJS dependencies are properly transformed to ESM during build.
@@ -16,8 +30,7 @@ export default defineConfig({
         transformMixedEsModules: true,
       },
     },
-    // NOTE: No react-dom/server alias here.
-    // The Cloudflare adapter handles aliasing for production builds internally.
-    // In dev mode, Node.js loads react-dom/server natively (CJS is supported).
+    // NOTE: The Cloudflare adapter aliases react-dom/server to the browser build.
+    // We override it above in production to use the edge build in Workers.
   },
 });
