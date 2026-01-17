@@ -10,5 +10,11 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      // Use the edge renderer to avoid MessageChannel in the Workers runtime.
+      alias: {
+        'react-dom/server': 'react-dom/server.edge',
+      },
+    },
   },
 });
