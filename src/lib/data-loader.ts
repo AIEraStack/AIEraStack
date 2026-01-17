@@ -154,14 +154,18 @@ export function isCachedRepo(owner: string, name: string, index: RepoIndex): boo
 export async function updateRepoInIndex(data: CachedRepoData, env?: DataEnv): Promise<void> {
   const index = await getRepoIndex(env);
   
-  // Calculate best score
+  // Calculate best score and per-LLM scores
   let bestScore = 0;
   let bestGrade = 'F';
+  const scoresByLLM: Record<string, { overall: number; grade: string }> = {};
   
-  const scoreEntries = Object.values(data.scores) as RepoScore[];
-  for (const llmScores of scoreEntries) {
+  const scoreEntries = Object.entries(data.scores);
+  for (const [llmId, llmScores] of scoreEntries) {
     const score = llmScores.overall || 0;
     const grade = llmScores.grade || 'F';
+    
+    scoresByLLM[llmId] = { overall: score, grade };
+    
     if (score > bestScore) {
       bestScore = score;
       bestGrade = grade;
@@ -180,6 +184,7 @@ export async function updateRepoInIndex(data: CachedRepoData, env?: DataEnv): Pr
     description: data.repo.description,
     bestScore,
     bestGrade,
+    scoresByLLM,
     updatedAt: data.repo.updatedAt,
     fetchedAt: data.fetchedAt,
   };

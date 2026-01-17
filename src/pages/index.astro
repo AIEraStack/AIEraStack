@@ -4,10 +4,16 @@ import { RepoSearch } from '../components/repo/RepoSearch';
 import { RotatingAIName } from '../components/ui/RotatingAIName';
 import { getFeaturedRepos, getReposByCategory } from '../lib/data-loader';
 import { CATEGORY_META, type RepoCategory } from '../lib/types';
+import { LLM_CONFIGS, getLLMById } from '../lib/llm-configs';
 
 export const prerender = false;
 
 const env = Astro.locals?.runtime?.env;
+
+// Get selected LLM from query params, default to gpt-5.2-codex
+const url = new URL(Astro.request.url);
+const selectedLLMId = url.searchParams.get('llm') || 'gpt-5.2-codex';
+const selectedLLM = getLLMById(selectedLLMId) || LLM_CONFIGS[0];
 
 const featured = await getFeaturedRepos(env);
 
@@ -61,8 +67,9 @@ const categorizedRepos = await Promise.all(
   categoryOrder.map(async (cat) => {
     const repos = await getReposByCategory(cat, env);
     const sorted = repos.sort((a, b) => {
-      const scoreA = a.bestScore || 0;
-      const scoreB = b.bestScore || 0;
+      // Sort by selected LLM's score
+      const scoreA = a.scoresByLLM?.[selectedLLMId]?.overall || a.bestScore || 0;
+      const scoreB = b.scoresByLLM?.[selectedLLMId]?.overall || b.bestScore || 0;
       return scoreB - scoreA;
     });
     return {
@@ -139,11 +146,28 @@ const examples = [
 
   <section class="py-24 px-6 relative">
     <div class="max-w-7xl mx-auto">
-      <div class="flex items-center justify-between mb-12">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <h2 class="text-3xl font-bold text-white">
           <span class="gradient-text">Curated</span> Stacks
         </h2>
-        <span class="text-[var(--text-muted)] text-sm">Scored for GPT-5.2-Codex</span>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <span class="text-sm text-[var(--text-muted)]">Scored for:</span>
+          <div class="flex flex-wrap gap-2">
+            {LLM_CONFIGS.map((llm) => (
+              <a
+                href={`/?llm=${llm.id}`}
+                class={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  selectedLLMId === llm.id
+                    ? 'text-white ring-2 ring-offset-2 ring-offset-slate-900'
+                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+                style={selectedLLMId === llm.id ? `background-color: ${llm.color}` : ''}
+              >
+                {llm.name}
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div class="space-y-12">
@@ -164,21 +188,21 @@ const examples = [
                   </h4>
                   <div class="space-y-2">
                     {cat.repos.map((repo, i) => {
-                      const score = repo.bestScore || 0;
+                      const score = repo.scoresByLLM?.[selectedLLMId]?.overall || repo.bestScore || 0;
                       return (
                         <a
                           href={`/repo/${repo.owner}/${repo.name}`}
                           class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
                         >
-                          <div class="flex items-center gap-3">
-                            <span class={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'text-[var(--text-muted)] bg-white/5'}`}>
+                          <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <span class={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0 ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'text-[var(--text-muted)] bg-white/5'}`}>
                               {i + 1}
                             </span>
-                            <span class="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate max-w-[120px]">
-                              {repo.name}
+                            <span class="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate" title={`${repo.owner}/${repo.name}`}>
+                              <span class="text-slate-500">{repo.owner}/</span>{repo.name}
                             </span>
                           </div>
-                          <div class="flex items-center gap-2">
+                          <div class="flex items-center gap-2 flex-shrink-0">
                             <div class="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
                               <div
                                 class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
@@ -206,40 +230,58 @@ const examples = [
         How We <span class="gradient-text">Score</span>
       </h2>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">⏰</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-cyan-400">Timeliness</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">35%</div>
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📡</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-indigo-400">Coverage</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">25%</div>
           <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            Checks if the latest version was released before the LLM's knowledge cutoff.
+            How well is this project covered in LLM training data?
           </p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📈</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-green-400">Popularity</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">30%</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-green-400">Adoption</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">20%</div>
           <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            More popular projects appear more frequently in LLM training data.
+            Stars, downloads, and community adoption metrics.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📚</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-amber-400">Documentation</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            README quality, docs, examples, and changelog presence.
           </p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
           <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">🤖</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-purple-400">AI Friendly</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">20%</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-purple-400">AI Readiness</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
           <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            Evaluates TypeScript support, documentation quality, and llms.txt.
+            TypeScript support, llms.txt, and AI-friendly structure.
           </p>
         </div>
 
         <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">💬</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-pink-400">Community</h3>
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">⚡</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-cyan-400">Momentum</h3>
           <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
           <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            Real developer feedback and issue health analysis.
+            Recent commit activity and release frequency.
+          </p>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">🔧</div>
+          <h3 class="text-lg font-bold text-white mb-3 text-pink-400">Maintenance</h3>
+          <div class="text-3xl font-mono font-bold text-white mb-4">10%</div>
+          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+            Issue health and PR response time quality.
           </p>
         </div>
       </div>

@@ -123,6 +123,21 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   },
 };
 
+export interface DocSignals {
+  readmeSize: number;
+  hasDocsDir: boolean;
+  hasExamplesDir: boolean;
+  hasChangelog: boolean;
+}
+
+export interface ActivitySignals {
+  recentCommitsCount: number; // Last 30 commits
+  commitFrequency: number; // Commits per week (based on recent 30)
+  avgDaysBetweenReleases: number; // Based on recent releases
+  recentClosedPRsCount: number; // Last 30 closed PRs
+  avgPRCloseTimeHours: number; // Average time to close/merge PRs (hours)
+}
+
 export interface CachedRepoData {
   owner: string;
   name: string;
@@ -136,6 +151,9 @@ export interface CachedRepoData {
 
   npmPackage: string | null;
   npmInfo: NpmPackageInfo | null;
+
+  docSignals: DocSignals;
+  activitySignals: ActivitySignals;
 
   scores: AllLLMScores;
 
@@ -172,6 +190,9 @@ export interface RepoIndexEntry {
   bestScore: number;
   bestGrade: string;
   
+  // Per-LLM scores for sorting (only overall + grade)
+  scoresByLLM: Record<string, { overall: number; grade: string }>;
+  
   updatedAt: string;
   fetchedAt: string;
 }
@@ -182,4 +203,4 @@ export interface RepoIndex {
   repos: Record<string, RepoIndexEntry>; // key: owner/name
 }
 
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;

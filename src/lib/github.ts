@@ -108,3 +108,86 @@ export async function checkLlmsTxt(owner: string, name: string, token?: string):
 
   return false;
 }
+
+export interface CommitInfo {
+  sha: string;
+  date: string;
+  message: string;
+}
+
+export interface PullRequestInfo {
+  number: number;
+  createdAt: string;
+  closedAt: string | null;
+  mergedAt: string | null;
+  state: string;
+}
+
+export async function fetchRecentCommits(owner: string, name: string, token?: string): Promise<CommitInfo[]> {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/commits?per_page=30`, {
+    headers: getGithubHeaders(token),
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+
+  return data.map((commit: any) => ({
+    sha: commit.sha,
+    date: commit.commit.author.date,
+    message: commit.commit.message,
+  }));
+}
+
+export async function fetchRecentClosedPRs(owner: string, name: string, token?: string): Promise<PullRequestInfo[]> {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/pulls?state=closed&per_page=30&sort=updated&direction=desc`, {
+    headers: getGithubHeaders(token),
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+
+  return data.map((pr: any) => ({
+    number: pr.number,
+    createdAt: pr.created_at,
+    closedAt: pr.closed_at,
+    mergedAt: pr.merged_at,
+    state: pr.state,
+  }));
+}
+
+export async function fetchReadmeSize(owner: string, name: string, token?: string): Promise<number> {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/readme`, {
+    headers: getGithubHeaders(token),
+  });
+
+  if (!response.ok) {
+    return 0;
+  }
+
+  const data = await response.json();
+  return data.size || 0;
+}
+
+export async function fetchRootContents(owner: string, name: string, token?: string): Promise<string[]> {
+  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/contents`, {
+    headers: getGithubHeaders(token),
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const data = await response.json();
+  
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((item: any) => item.name.toLowerCase());
+}

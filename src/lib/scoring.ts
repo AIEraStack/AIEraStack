@@ -1,6 +1,7 @@
 import { LLM_CONFIGS, type LLMConfig } from './llm-configs';
 import type { RepoInfo, ReleaseInfo } from './github';
 import type { NpmPackageInfo } from './npm';
+import type { DocSignals, ActivitySignals } from './types';
 
 export interface DimensionScore {
   score: number;
@@ -10,10 +11,12 @@ export interface DimensionScore {
 export interface RepoScore {
   overall: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
-  timeliness: DimensionScore;
-  popularity: DimensionScore;
-  aiFriendliness: DimensionScore;
-  community: DimensionScore;
+  coverage: DimensionScore;
+  adoption: DimensionScore;
+  documentation: DimensionScore;
+  aiReadiness: DimensionScore;
+  momentum: DimensionScore;
+  maintenance: DimensionScore;
 }
 
 export interface AllLLMScores {
@@ -21,22 +24,26 @@ export interface AllLLMScores {
 }
 
 const WEIGHTS = {
-  timeliness: 0.35,
-  popularity: 0.30,
-  aiFriendliness: 0.20,
-  community: 0.15,
+  coverage: 0.25,      // LLM training coverage (was timeliness)
+  adoption: 0.20,      // Stars/downloads (was popularity, reduced weight)
+  documentation: 0.15, // README/docs quality (new)
+  aiReadiness: 0.15,   // TypeScript/llms.txt (was aiFriendliness)
+  momentum: 0.15,      // Recent activity/releases (new)
+  maintenance: 0.10,   // PR/issue health (was community)
 };
 
 export function calculateScores(
   repo: RepoInfo,
   releases: ReleaseInfo[],
   npmInfo: NpmPackageInfo | null,
-  hasLlmsTxt: boolean
+  hasLlmsTxt: boolean,
+  docSignals: DocSignals,
+  activitySignals: ActivitySignals
 ): AllLLMScores {
   const scores: AllLLMScores = {};
 
   for (const llm of LLM_CONFIGS) {
-    scores[llm.id] = calculateScoreForLLM(repo, releases, npmInfo, hasLlmsTxt, llm);
+    scores[llm.id] = calculateScoreForLLM(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals, llm);
   }
 
   return scores;
@@ -47,30 +54,39 @@ function calculateScoreForLLM(
   releases: ReleaseInfo[],
   npmInfo: NpmPackageInfo | null,
   hasLlmsTxt: boolean,
+  docSignals: DocSignals,
+  activitySignals: ActivitySignals,
   llm: LLMConfig
 ): RepoScore {
-  const timeliness = calculateTimeliness(repo, releases, llm);
-  const popularity = calculatePopularity(repo, npmInfo);
-  const aiFriendliness = calculateAIFriendliness(repo, npmInfo, hasLlmsTxt);
-  const community = calculateCommunity(repo);
+  const coverage = calculateCoverage(repo, releases, llm);
+  const adoption = calculateAdoption(repo, npmInfo);
+  const documentation = calculateDocumentation(docSignals);
+  const aiReadiness = calculateAIReadiness(repo, npmInfo, hasLlmsTxt);
+  const momentum = calculateMomentum(activitySignals, releases);
+  const maintenance = calculateMaintenance(repo, activitySignals);
 
   const overall =
-    timeliness.score * WEIGHTS.timeliness +
-    popularity.score * WEIGHTS.popularity +
-    aiFriendliness.score * WEIGHTS.aiFriendliness +
-    community.score * WEIGHTS.community;
+    coverage.score * WEIGHTS.coverage +
+    adoption.score * WEIGHTS.adoption +
+    documentation.score * WEIGHTS.documentation +
+    aiReadiness.score * WEIGHTS.aiReadiness +
+    momentum.score * WEIGHTS.momentum +
+    maintenance.score * WEIGHTS.maintenance;
 
   return {
     overall: Math.round(overall),
     grade: getGrade(overall),
-    timeliness,
-    popularity,
-    aiFriendliness,
-    community,
+    coverage,
+    adoption,
+    documentation,
+    aiReadiness,
+    momentum,
+    maintenance,
   };
 }
 
-function calculateTimeliness(
+// Coverage: How well is this repo covered in LLM training data?
+function calculateCoverage(
   repo: RepoInfo,
   releases: ReleaseInfo[],
   llm: LLMConfig
@@ -113,7 +129,8 @@ function calculateTimeliness(
   };
 }
 
-function calculatePopularity(repo: RepoInfo, npmInfo: NpmPackageInfo | null): DimensionScore {
+// Adoption: How widely adopted is this project?
+function calculateAdoption(repo: RepoInfo, npmInfo: NpmPackageInfo | null): DimensionScore {
   const starScore = Math.min(100, Math.log10(repo.stars + 1) * 20);
   const forkScore = Math.min(100, Math.log10(repo.forks + 1) * 25);
 
@@ -137,7 +154,49 @@ function calculatePopularity(repo: RepoInfo, npmInfo: NpmPackageInfo | null): Di
   };
 }
 
-function calculateAIFriendliness(
+// Documentation: How well documented is this project?
+function calculateDocumentation(docSignals: DocSignals): DimensionScore {
+  let score = 0;
+
+  // README size (0-40 points)
+  if (docSignals.readmeSize > 10000) {
+    score += 40;
+  } else if (docSignals.readmeSize > 5000) {
+    score += 30;
+  } else if (docSignals.readmeSize > 2000) {
+    score += 20;
+  } else if (docSignals.readmeSize > 500) {
+    score += 10;
+  }
+
+  // Docs directory (25 points)
+  if (docSignals.hasDocsDir) {
+    score += 25;
+  }
+
+  // Examples directory (20 points)
+  if (docSignals.hasExamplesDir) {
+    score += 20;
+  }
+
+  // Changelog (15 points)
+  if (docSignals.hasChangelog) {
+    score += 15;
+  }
+
+  return {
+    score: Math.min(100, score),
+    details: {
+      readmeSize: docSignals.readmeSize,
+      hasDocsDir: docSignals.hasDocsDir,
+      hasExamplesDir: docSignals.hasExamplesDir,
+      hasChangelog: docSignals.hasChangelog,
+    },
+  };
+}
+
+// AI Readiness: How AI-friendly is this codebase?
+function calculateAIReadiness(
   repo: RepoInfo,
   npmInfo: NpmPackageInfo | null,
   hasLlmsTxt: boolean
@@ -148,11 +207,11 @@ function calculateAIFriendliness(
   const hasNpmTypes = npmInfo?.hasTypes === 'bundled' || npmInfo?.hasTypes === 'definitelyTyped';
 
   if (hasTypescript || hasNpmTypes) {
-    score += 35;
+    score += 40;
   }
 
   if (hasLlmsTxt) {
-    score += 25;
+    score += 30;
   }
 
   const hasGoodTopics = repo.topics.length >= 3;
@@ -160,14 +219,9 @@ function calculateAIFriendliness(
     score += 15;
   }
 
-  const isWellMaintained = new Date(repo.pushedAt) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  if (isWellMaintained) {
-    score += 15;
-  }
-
   const hasLicense = !!repo.license;
   if (hasLicense) {
-    score += 10;
+    score += 15;
   }
 
   return {
@@ -176,28 +230,85 @@ function calculateAIFriendliness(
       hasTypescript: hasTypescript || hasNpmTypes,
       hasLlmsTxt,
       hasGoodTopics,
-      isWellMaintained,
       hasLicense,
     },
   };
 }
 
-function calculateCommunity(repo: RepoInfo): DimensionScore {
-  const issueRatio = repo.openIssues / Math.max(1, repo.stars);
-  const healthyIssueRatio = issueRatio < 0.05;
+// Momentum: How active is recent development?
+function calculateMomentum(activitySignals: ActivitySignals, releases: ReleaseInfo[]): DimensionScore {
+  let score = 0;
 
-  let score = 50;
-
-  if (healthyIssueRatio) {
-    score += 25;
-  }
-
-  if (repo.forks > 100) {
-    score += 15;
-  }
-
-  if (repo.topics.length > 0) {
+  // Commit frequency (0-40 points)
+  if (activitySignals.commitFrequency > 10) {
+    score += 40;
+  } else if (activitySignals.commitFrequency > 5) {
+    score += 30;
+  } else if (activitySignals.commitFrequency > 2) {
+    score += 20;
+  } else if (activitySignals.commitFrequency > 0.5) {
     score += 10;
+  }
+
+  // Release frequency (0-35 points)
+  if (activitySignals.avgDaysBetweenReleases > 0) {
+    if (activitySignals.avgDaysBetweenReleases < 30) {
+      score += 35;
+    } else if (activitySignals.avgDaysBetweenReleases < 60) {
+      score += 25;
+    } else if (activitySignals.avgDaysBetweenReleases < 120) {
+      score += 15;
+    } else if (activitySignals.avgDaysBetweenReleases < 180) {
+      score += 5;
+    }
+  }
+
+  // Recent commits count (0-25 points)
+  if (activitySignals.recentCommitsCount >= 30) {
+    score += 25;
+  } else if (activitySignals.recentCommitsCount >= 20) {
+    score += 20;
+  } else if (activitySignals.recentCommitsCount >= 10) {
+    score += 15;
+  } else if (activitySignals.recentCommitsCount >= 5) {
+    score += 10;
+  }
+
+  return {
+    score: Math.min(100, score),
+    details: {
+      commitFrequency: Math.round(activitySignals.commitFrequency * 10) / 10,
+      avgDaysBetweenReleases: Math.round(activitySignals.avgDaysBetweenReleases),
+      recentCommitsCount: activitySignals.recentCommitsCount,
+    },
+  };
+}
+
+// Maintenance: How well maintained is this project?
+function calculateMaintenance(repo: RepoInfo, activitySignals: ActivitySignals): DimensionScore {
+  let score = 50; // Base score
+
+  // Issue health (0-30 points)
+  const issueRatio = repo.openIssues / Math.max(1, repo.stars);
+  if (issueRatio < 0.02) {
+    score += 30;
+  } else if (issueRatio < 0.05) {
+    score += 20;
+  } else if (issueRatio < 0.1) {
+    score += 10;
+  }
+
+  // PR close time (0-20 points)
+  if (activitySignals.avgPRCloseTimeHours > 0) {
+    if (activitySignals.avgPRCloseTimeHours < 24) {
+      score += 20;
+    } else if (activitySignals.avgPRCloseTimeHours < 72) {
+      score += 15;
+    } else if (activitySignals.avgPRCloseTimeHours < 168) {
+      score += 10;
+    } else if (activitySignals.avgPRCloseTimeHours < 720) {
+      score += 5;
+    }
   }
 
   return {
@@ -205,7 +316,8 @@ function calculateCommunity(repo: RepoInfo): DimensionScore {
     details: {
       openIssues: repo.openIssues,
       issueRatio: Math.round(issueRatio * 1000) / 1000,
-      healthyIssueRatio,
+      avgPRCloseTimeHours: Math.round(activitySignals.avgPRCloseTimeHours),
+      recentClosedPRsCount: activitySignals.recentClosedPRsCount,
     },
   };
 }

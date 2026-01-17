@@ -205,10 +205,12 @@ export function CompareSection({ repos }: CompareSectionProps) {
 
               {score && (
                 <div className="space-y-2">
-                  <ScoreRow label="Timeliness" score={score.timeliness.score} color="#6366f1" />
-                  <ScoreRow label="Popularity" score={score.popularity.score} color="#10b981" />
-                  <ScoreRow label="AI-Friendliness" score={score.aiFriendliness.score} color="#f59e0b" />
-                  <ScoreRow label="Community" score={score.community.score} color="#ec4899" />
+                  <ScoreRow label="Coverage" score={score.coverage.score} color="#6366f1" />
+                  <ScoreRow label="Adoption" score={score.adoption.score} color="#10b981" />
+                  <ScoreRow label="Documentation" score={score.documentation.score} color="#f59e0b" />
+                  <ScoreRow label="AI Readiness" score={score.aiReadiness.score} color="#a855f7" />
+                  <ScoreRow label="Momentum" score={score.momentum.score} color="#06b6d4" />
+                  <ScoreRow label="Maintenance" score={score.maintenance.score} color="#ec4899" />
                 </div>
               )}
 
@@ -234,10 +236,12 @@ export function CompareSection({ repos }: CompareSectionProps) {
               <tr className="border-b border-white/10">
                 <th className="text-left py-3 px-2 text-slate-400 font-medium">Library</th>
                 <th className="text-center py-3 px-2 text-slate-400 font-medium">Overall</th>
-                <th className="text-center py-3 px-2 text-slate-400 font-medium">Timeliness</th>
-                <th className="text-center py-3 px-2 text-slate-400 font-medium">Popularity</th>
-                <th className="text-center py-3 px-2 text-slate-400 font-medium">AI-Friendly</th>
-                <th className="text-center py-3 px-2 text-slate-400 font-medium">Community</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">Coverage</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">Adoption</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">Docs</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">AI Ready</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">Momentum</th>
+                <th className="text-center py-3 px-2 text-slate-400 font-medium text-xs">Maint.</th>
               </tr>
             </thead>
             <tbody>
@@ -265,16 +269,22 @@ export function CompareSection({ repos }: CompareSectionProps) {
                       <span className={`font-bold ${overallClass}`}>{overallText}</span>
                     </td>
                     <td className={`text-center py-3 px-2 ${cellClass}`}>
-                      {score ? score.timeliness.score : '-'}
+                      {score ? score.coverage.score : '-'}
                     </td>
                     <td className={`text-center py-3 px-2 ${cellClass}`}>
-                      {score ? score.popularity.score : '-'}
+                      {score ? score.adoption.score : '-'}
                     </td>
                     <td className={`text-center py-3 px-2 ${cellClass}`}>
-                      {score ? score.aiFriendliness.score : '-'}
+                      {score ? score.documentation.score : '-'}
                     </td>
                     <td className={`text-center py-3 px-2 ${cellClass}`}>
-                      {score ? score.community.score : '-'}
+                      {score ? score.aiReadiness.score : '-'}
+                    </td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.momentum.score : '-'}
+                    </td>
+                    <td className={`text-center py-3 px-2 ${cellClass}`}>
+                      {score ? score.maintenance.score : '-'}
                     </td>
                   </tr>
                 );

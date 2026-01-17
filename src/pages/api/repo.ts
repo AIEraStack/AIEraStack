@@ -1,10 +1,18 @@
 import type { APIRoute } from 'astro';
 import curatedSource from '../../data/curated-repos.json';
 import { getCachedRepo, saveRepoToR2, updateRepoInIndex } from '../../lib/data-loader';
-import { checkLlmsTxt, fetchReleases, fetchRepoInfo } from '../../lib/github';
+import { 
+  checkLlmsTxt, 
+  fetchReleases, 
+  fetchRepoInfo, 
+  fetchRecentCommits, 
+  fetchRecentClosedPRs, 
+  fetchReadmeSize, 
+  fetchRootContents 
+} from '../../lib/github';
 import { fetchNpmPackage } from '../../lib/npm';
 import { calculateScores } from '../../lib/scoring';
-import type { CachedRepoData, CuratedRepo } from '../../lib/types';
+import type { CachedRepoData, CuratedRepo, DocSignals, ActivitySignals } from '../../lib/types';
 import { DATA_VERSION } from '../../lib/types';
 
 interface R2Bucket {
@@ -63,13 +71,37 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   // Fetch fresh data
   try {
-    const repo = await fetchRepoInfo(owner, name, env.GITHUB_TOKEN);
-    const releases = await fetchReleases(owner, name, env.GITHUB_TOKEN);
-    const hasLlmsTxt = await checkLlmsTxt(owner, name, env.GITHUB_TOKEN);
+    const [repo, releases, hasLlmsTxt, readmeSize, rootContents, recentCommits, recentClosedPRs] = await Promise.all([
+      fetchRepoInfo(owner, name, env.GITHUB_TOKEN),
+      fetchReleases(owner, name, env.GITHUB_TOKEN),
+      checkLlmsTxt(owner, name, env.GITHUB_TOKEN),
+      fetchReadmeSize(owner, name, env.GITHUB_TOKEN),
+      fetchRootContents(owner, name, env.GITHUB_TOKEN),
+      fetchRecentCommits(owner, name, env.GITHUB_TOKEN),
+      fetchRecentClosedPRs(owner, name, env.GITHUB_TOKEN),
+    ]);
 
     const npmPackageName = curatedMatch?.npmPackage || repo.name.toLowerCase();
     const npmInfo = await fetchNpmPackage(npmPackageName);
-    const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt);
+
+    // Build doc signals
+    const docSignals: DocSignals = {
+      readmeSize,
+      hasDocsDir: rootContents.some(name => name === 'docs' || name === 'documentation'),
+      hasExamplesDir: rootContents.some(name => name === 'examples' || name === 'example'),
+      hasChangelog: rootContents.some(name => name.includes('changelog') || name.includes('history')),
+    };
+
+    // Build activity signals
+    const activitySignals: ActivitySignals = {
+      recentCommitsCount: recentCommits.length,
+      commitFrequency: calculateCommitFrequency(recentCommits),
+      avgDaysBetweenReleases: calculateAvgDaysBetweenReleases(releases),
+      recentClosedPRsCount: recentClosedPRs.length,
+      avgPRCloseTimeHours: calculateAvgPRCloseTime(recentClosedPRs),
+    };
+
+    const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals);
 
     const cacheRecord: CachedRepoData = {
       owner: repo.owner,
@@ -82,6 +114,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
       hasLlmsTxt,
       npmPackage: npmInfo ? npmPackageName : null,
       npmInfo,
+      docSignals,
+      activitySignals,
       scores,
       sources: {
         github: `https://github.com/${repo.owner}/${repo.name}`,
@@ -104,3 +138,44 @@ export const GET: APIRoute = async ({ request, locals }) => {
     return jsonResponse({ error: message }, 500);
   }
 };
+
+function calculateCommitFrequency(commits: any[]): number {
+  if (commits.length < 2) return 0;
+  
+  const dates = commits.map(c => new Date(c.date).getTime()).sort((a, b) => b - a);
+  const oldestDate = dates[dates.length - 1];
+  const newestDate = dates[0];
+  const daysSpan = (newestDate - oldestDate) / (1000 * 60 * 60 * 24);
+  
+  if (daysSpan === 0) return commits.length;
+  
+  return (commits.length / daysSpan) * 7; // commits per week
+}
+
+function calculateAvgDaysBetweenReleases(releases: any[]): number {
+  const nonPrereleases = releases.filter(r => !r.isPrerelease);
+  if (nonPrereleases.length < 2) return 0;
+  
+  const dates = nonPrereleases.map(r => new Date(r.publishedAt).getTime()).sort((a, b) => b - a);
+  let totalDays = 0;
+  
+  for (let i = 0; i < dates.length - 1; i++) {
+    totalDays += (dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24);
+  }
+  
+  return totalDays / (dates.length - 1);
+}
+
+function calculateAvgPRCloseTime(prs: any[]): number {
+  const closedPRs = prs.filter(pr => pr.closedAt);
+  if (closedPRs.length === 0) return 0;
+  
+  let totalHours = 0;
+  for (const pr of closedPRs) {
+    const created = new Date(pr.createdAt).getTime();
+    const closed = new Date(pr.closedAt).getTime();
+    totalHours += (closed - created) / (1000 * 60 * 60);
+  }
+  
+  return totalHours / closedPRs.length;
+}
