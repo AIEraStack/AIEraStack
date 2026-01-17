@@ -17,8 +17,8 @@ const categorizedRepos = await Promise.all(
   categoryOrder.map(async (cat) => {
     const repos = await getReposByCategory(cat, env);
     const sorted = repos.sort((a, b) => {
-      const scoreA = a.scores['gpt-5.2-codex']?.overall || 0;
-      const scoreB = b.scores['gpt-5.2-codex']?.overall || 0;
+      const scoreA = a.bestScore || 0;
+      const scoreB = b.bestScore || 0;
       return scoreB - scoreA;
     });
     return {
@@ -98,7 +98,7 @@ const examples = [
             </h3>
             <div class="space-y-2">
               {cat.repos.map((repo, i) => {
-                const score = repo.scores['gpt-5.2-codex']?.overall || 0;
+                const score = repo.bestScore || 0;
                 return (
                   <a
                     href={`/repo/${repo.owner}/${repo.name}`}

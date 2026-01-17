@@ -1,11 +1,13 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../src/data');
 const CURATED_PATH = join(DATA_DIR, 'curated-repos.json');
-const OUTPUT_PATH = join(DATA_DIR, 'repos.json');
+const OUTPUT_PATH = join(DATA_DIR, 'repos.json'); // Legacy format for local fallback
+const INDEX_PATH = join(DATA_DIR, 'index.json');
+const REPOS_DIR = join(DATA_DIR, 'repos');
 
 const GITHUB_API = 'https://api.github.com';
 const NPM_REGISTRY = 'https://registry.npmjs.org';
@@ -53,6 +55,21 @@ interface NpmPackageInfo {
   weeklyDownloads: number;
   hasTypes: 'bundled' | 'definitelyTyped' | 'none';
   repository: string | null;
+}
+
+interface RepoIndexEntry {
+  owner: string;
+  name: string;
+  fullName: string;
+  category: string;
+  featured: boolean;
+  stars: number;
+  language: string;
+  description: string;
+  bestScore: number;
+  bestGrade: string;
+  updatedAt: string;
+  fetchedAt: string;
 }
 
 const LLM_CONFIGS = [
@@ -335,14 +352,35 @@ function saveData(results: Record<string, unknown>) {
   writeFileSync(OUTPUT_PATH, JSON.stringify(dataStore, null, 2));
 }
 
+// Save individual repo file in split architecture
+function saveRepoFile(owner: string, name: string, data: unknown) {
+  mkdirSync(REPOS_DIR, { recursive: true });
+  const ownerDir = join(REPOS_DIR, owner);
+  mkdirSync(ownerDir, { recursive: true });
+  const filePath = join(ownerDir, `${name}.json`);
+  writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+// Save index file
+function saveIndexFile(index: Record<string, RepoIndexEntry>) {
+  const indexData = {
+    version: DATA_VERSION,
+    generatedAt: new Date().toISOString(),
+    repos: index,
+  };
+  writeFileSync(INDEX_PATH, JSON.stringify(indexData, null, 2));
+}
+
 async function main() {
   console.log('Loading curated repos...');
   const curatedData = JSON.parse(readFileSync(CURATED_PATH, 'utf-8'));
   const curatedRepos: CuratedRepo[] = curatedData.repos;
   
   console.log(`Found ${curatedRepos.length} curated repos`);
+  console.log('Using split architecture: index.json + individual repo files');
   
   const results: Record<string, unknown> = loadExistingData();
+  const index: Record<string, RepoIndexEntry> = {};
   const errors: string[] = [];
   const skipExisting = process.argv.includes('--skip-existing');
   
@@ -371,7 +409,7 @@ async function main() {
       
       const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt);
       
-      results[key] = {
+      const repoData = {
         owner: curated.owner,
         name: curated.name,
         fullName: repo.fullName,
@@ -397,7 +435,44 @@ async function main() {
         dataVersion: DATA_VERSION,
       };
       
+      // Save to legacy format (for backward compatibility)
+      results[key] = repoData;
+      
+      // Save individual repo file (new architecture)
+      saveRepoFile(curated.owner, curated.name, repoData);
+      
+      // Calculate best score for index
+      let bestScore = 0;
+      let bestGrade = 'F';
+      for (const llmScores of Object.values(scores)) {
+        const score = (llmScores as any).overall || 0;
+        const grade = (llmScores as any).grade || 'F';
+        if (score > bestScore) {
+          bestScore = score;
+          bestGrade = grade;
+        }
+      }
+      
+      // Add to index
+      index[key] = {
+        owner: curated.owner,
+        name: curated.name,
+        fullName: repo.fullName,
+        category: curated.category,
+        featured: curated.featured || false,
+        stars: repo.stars,
+        language: repo.language,
+        description: repo.description,
+        bestScore,
+        bestGrade,
+        updatedAt: repo.updatedAt,
+        fetchedAt: new Date().toISOString(),
+      };
+      
+      // Save after each repo to avoid data loss
       saveData(results);
+      saveIndexFile(index);
+      
       await sleep(100);
     } catch (error) {
       const msg = `Failed to fetch ${key}: ${error instanceof Error ? error.message : String(error)}`;
@@ -406,15 +481,22 @@ async function main() {
     }
   }
   
+  // Final save
   saveData(results);
+  saveIndexFile(index);
+  
   const totalRepos = Object.keys(results).length;
   if (totalRepos === 0) {
     throw new Error('No repo data generated. Check GITHUB_TOKEN or rate limits.');
   }
-  console.log(`\nWrote ${totalRepos} repos to ${OUTPUT_PATH}`);
+  
+  console.log(`\n✅ Success!`);
+  console.log(`  - Legacy format: ${OUTPUT_PATH} (${totalRepos} repos)`);
+  console.log(`  - Index file: ${INDEX_PATH} (${Object.keys(index).length} entries)`);
+  console.log(`  - Individual files: ${REPOS_DIR}/ (${Object.keys(index).length} files)`);
   
   if (errors.length > 0) {
-    console.log(`\n${errors.length} errors occurred:`);
+    console.log(`\n⚠️  ${errors.length} errors occurred:`);
     errors.forEach(e => console.log(`  - ${e}`));
   }
 }

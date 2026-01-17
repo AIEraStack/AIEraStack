@@ -101,4 +101,31 @@ export interface DataStore {
   repos: Record<string, CachedRepoData>;
 }
 
+// New: Index structure for split storage
+export interface RepoIndexEntry {
+  owner: string;
+  name: string;
+  fullName: string;
+  category: RepoCategory;
+  featured: boolean;
+  
+  // Summary data for quick access
+  stars: number;
+  language: string;
+  description: string;
+  
+  // Best score across all LLMs
+  bestScore: number;
+  bestGrade: string;
+  
+  updatedAt: string;
+  fetchedAt: string;
+}
+
+export interface RepoIndex {
+  version: number;
+  generatedAt: string;
+  repos: Record<string, RepoIndexEntry>; // key: owner/name
+}
+
 export const DATA_VERSION = 1;

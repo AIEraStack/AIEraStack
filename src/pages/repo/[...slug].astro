@@ -2,8 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { RepoAnalyzer } from '../../components/repo/RepoAnalyzer';
 import { getCachedRepo } from '../../lib/data-loader';
-import { LLMComparison } from '../../components/repo/LLMComparison';
-import { DimensionBreakdown } from '../../components/repo/DimensionBreakdown';
+import { ScoreSection } from '../../components/repo/ScoreSection';
 import { BadgeCopy } from '../../components/repo/BadgeCopy';
 import { LLM_CONFIGS } from '../../lib/llm-configs';
 
@@ -104,17 +103,7 @@ const currentLlm = LLM_CONFIGS.find(l => l.id === defaultLlmId);
           </div>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl">
-          <h2 class="text-xl font-bold text-white mb-6">LLM Comparison</h2>
-          <LLMComparison scores={cached.scores} bestLLMId={defaultLlmId} client:load />
-        </div>
-
-        {currentScore && (
-          <div class="glass-card p-6 rounded-2xl">
-            <h2 class="text-xl font-bold text-white mb-6">Score Breakdown for {currentLlm?.name}</h2>
-            <DimensionBreakdown score={currentScore} llmName={currentLlm?.name || defaultLlmId} client:load />
-          </div>
-        )}
+        <ScoreSection scores={cached.scores} defaultLLMId={defaultLlmId} client:load />
 
         <BadgeCopy owner={owner} name={name} client:load />
 

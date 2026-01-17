@@ -25,4 +25,6 @@ pnpm-debug.log*
 
 # cached data (stored in R2)
 src/data/repos.json
+src/data/index.json
+src/data/repos/
 docs/

@@ -1,17 +1,14 @@
 import type { APIRoute } from 'astro';
 import curatedSource from '../../data/curated-repos.json';
+import { getCachedRepo, saveRepoToR2, updateRepoInIndex } from '../../lib/data-loader';
 import { checkLlmsTxt, fetchReleases, fetchRepoInfo } from '../../lib/github';
 import { fetchNpmPackage } from '../../lib/npm';
 import { calculateScores } from '../../lib/scoring';
-import type { CachedRepoData, CuratedRepo, DataStore } from '../../lib/types';
+import type { CachedRepoData, CuratedRepo } from '../../lib/types';
 import { DATA_VERSION } from '../../lib/types';
 
-interface R2Object {
-  json(): Promise<unknown>;
-}
-
 interface R2Bucket {
-  get(key: string): Promise<R2Object | null>;
+  get(key: string): Promise<any>;
   put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<void>;
 }
 
@@ -21,7 +18,6 @@ interface CloudflareEnv {
 }
 
 const curatedRepos = (curatedSource as unknown as { repos: CuratedRepo[] }).repos;
-const STORE_KEY = 'repos.json';
 
 function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -30,40 +26,6 @@ function jsonResponse(data: unknown, status = 200): Response {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store',
     },
-  });
-}
-
-function isDataStore(value: unknown): value is DataStore {
-  if (!value || typeof value !== 'object') return false;
-  const store = value as { repos?: unknown };
-  return typeof store.repos === 'object' && store.repos !== null;
-}
-
-async function readStore(bucket?: R2Bucket): Promise<DataStore | null> {
-  if (!bucket) return null;
-  const object = await bucket.get(STORE_KEY);
-  if (!object) return null;
-  const data = await object.json();
-  return isDataStore(data) ? data : null;
-}
-
-async function readCachedRepo(bucket: R2Bucket | undefined, key: string): Promise<CachedRepoData | null> {
-  const store = await readStore(bucket);
-  return store?.repos[key] || null;
-}
-
-async function writeCachedRepo(bucket: R2Bucket, key: string, data: CachedRepoData): Promise<void> {
-  const store = (await readStore(bucket)) || {
-    version: DATA_VERSION,
-    generatedAt: new Date().toISOString(),
-    repos: {},
-  };
-
-  store.repos[key] = data;
-  store.generatedAt = new Date().toISOString();
-
-  await bucket.put(STORE_KEY, JSON.stringify(store), {
-    httpMetadata: { contentType: 'application/json' },
   });
 }
 
@@ -88,11 +50,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
   const curatedMatch = findCuratedRepo(owner, name);
   const cacheKey = curatedMatch ? `${curatedMatch.owner}/${curatedMatch.name}` : `${owner}/${name}`;
 
-  const cached = await readCachedRepo(env.DATA_BUCKET, cacheKey);
+  // Check cache using new loader (supports both split and legacy formats)
+  const cached = await getCachedRepo(
+    curatedMatch?.owner || owner,
+    curatedMatch?.name || name,
+    { DATA_BUCKET: env.DATA_BUCKET }
+  );
+  
   if (cached) {
     return jsonResponse(cached);
   }
 
+  // Fetch fresh data
   try {
     const repo = await fetchRepoInfo(owner, name, env.GITHUB_TOKEN);
     const releases = await fetchReleases(owner, name, env.GITHUB_TOKEN);
@@ -123,8 +92,10 @@ export const GET: APIRoute = async ({ request, locals }) => {
       dataVersion: DATA_VERSION,
     };
 
+    // Save using new split architecture
     if (env.DATA_BUCKET) {
-      await writeCachedRepo(env.DATA_BUCKET, cacheKey, cacheRecord);
+      await saveRepoToR2(cacheRecord, { DATA_BUCKET: env.DATA_BUCKET });
+      await updateRepoInIndex(cacheRecord, { DATA_BUCKET: env.DATA_BUCKET });
     }
 
     return jsonResponse(cacheRecord);

@@ -5,6 +5,10 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
@@ -24,7 +28,11 @@ jobs:
 
       - name: Download existing data from R2
         run: |
+          # Download legacy repos.json
           npx wrangler r2 object get aierastack-data/repos.json --file=src/data/repos.json || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/repos.json
+          
+          # Download index.json (new architecture)
+          npx wrangler r2 object get aierastack-data/index.json --file=src/data/index.json || echo '{"version":1,"generatedAt":"","repos":{}}' > src/data/index.json
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -36,7 +44,23 @@ jobs:
 
       - name: Upload to R2
         run: |
+          # Upload legacy repos.json
           npx wrangler r2 object put aierastack-data/repos.json --file=src/data/repos.json --content-type=application/json
+          
+          # Upload index.json (new architecture)
+          if [ -f src/data/index.json ]; then
+            npx wrangler r2 object put aierastack-data/index.json --file=src/data/index.json --content-type=application/json
+          fi
+          
+          # Upload individual repo files (new architecture)
+          if [ -d src/data/repos ]; then
+            find src/data/repos -name "*.json" | while read file; do
+              # Convert path: src/data/repos/owner/name.json -> repos/owner/name.json
+              r2_key="${file#src/data/}"
+              echo "Uploading $r2_key"
+              npx wrangler r2 object put "aierastack-data/$r2_key" --file="$file" --content-type=application/json
+            done
+          fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

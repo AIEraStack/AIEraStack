@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 
 const AI_NAMES = [
-  'your AI',
+  'Sonnet',
+  'Opus', 
+  'Codex',
+  'Gemini 3',
   'GPT-5',
   'Claude',
+  'ChatGPT',
   'Gemini',
-  'Cursor',
   'Copilot',
-  'Codex',
+  'Cursor',
+  'Windsurf',
+  'Claude Code',
+  'Cline',
+  'Amp',
+  'Cody',
+  'Aider',
+  'your AI',
 ];
 
 export function RotatingAIName() {

@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { getCachedRepo } from '../lib/data-loader';
-import { LLM_CONFIGS } from '../lib/llm-configs';
+import { CompareSection } from '../components/compare/CompareSection';
 
 export const prerender = false;
 
@@ -24,30 +24,16 @@ const repoDataPromises = repoSlugs.map(async (slug) => {
 const repos = await Promise.all(repoDataPromises);
 const validRepos = repos.filter(r => r.data !== null);
 
-const defaultLlmId = 'gpt-5.2-codex';
-const defaultLlm = LLM_CONFIGS.find(l => l.id === defaultLlmId);
-
-function getGradeColor(grade: string): string {
-  const colors: Record<string, string> = {
-    A: 'text-green-400',
-    B: 'text-lime-400', 
-    C: 'text-yellow-400',
-    D: 'text-orange-400',
-    F: 'text-red-400',
-  };
-  return colors[grade] || 'text-slate-400';
-}
-
-function getGradeBg(grade: string): string {
-  const colors: Record<string, string> = {
-    A: 'bg-green-500/10 border-green-500/30',
-    B: 'bg-lime-500/10 border-lime-500/30',
-    C: 'bg-yellow-500/10 border-yellow-500/30',
-    D: 'bg-orange-500/10 border-orange-500/30',
-    F: 'bg-red-500/10 border-red-500/30',
-  };
-  return colors[grade] || 'bg-slate-500/10 border-slate-500/30';
-}
+const compareRepos = validRepos.map(r => ({
+  slug: r.slug,
+  owner: r.owner,
+  name: r.name,
+  description: r.data?.repo.description || '',
+  stars: r.data?.repo.stars || 0,
+  forks: r.data?.repo.forks || 0,
+  weeklyDownloads: r.data?.npmInfo?.weeklyDownloads || null,
+  scores: r.data?.scores || {},
+}));
 
 const pageTitle = validRepos.length > 0 
   ? `Compare ${validRepos.map(r => r.name).join(' vs ')} - AI Era Stack`
@@ -62,7 +48,7 @@ const pageTitle = validRepos.length > 0
 
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-white mb-2">Compare Libraries</h1>
-      <p class="text-[var(--text-muted)]">See which libraries have better AI support for {defaultLlm?.name}</p>
+      <p class="text-[var(--text-muted)]">See which libraries have better AI support across different models</p>
     </div>
 
     <form class="glass-card p-6 rounded-2xl mb-8" method="GET" action="/compare">
@@ -124,123 +110,7 @@ const pageTitle = validRepos.length > 0
     )}
 
     {validRepos.length > 0 && (
-      <div class="space-y-6">
-        <div class="grid gap-4" style={`grid-template-columns: repeat(${Math.min(validRepos.length, 3)}, 1fr)`}>
-          {validRepos.map((repo) => {
-            const score = repo.data?.scores[defaultLlmId];
-            return (
-              <a href={`/repo/${repo.slug}`} class="glass-card p-6 rounded-2xl hover:border-cyan-500/30 transition-colors">
-                <div class="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 class="text-lg font-bold text-white">{repo.name}</h3>
-                    <p class="text-sm text-[var(--text-muted)]">{repo.owner}</p>
-                  </div>
-                  {score && (
-                    <div class={`px-3 py-2 rounded-xl border ${getGradeBg(score.grade)} text-center`}>
-                      <div class={`text-2xl font-bold ${getGradeColor(score.grade)}`}>{score.overall}</div>
-                      <div class={`text-xs font-medium ${getGradeColor(score.grade)}`}>Grade {score.grade}</div>
-                    </div>
-                  )}
-                </div>
-                
-                <p class="text-sm text-[var(--text-muted)] mb-4 line-clamp-2">
-                  {repo.data?.repo.description || 'No description'}
-                </p>
-
-                {score && (
-                  <div class="space-y-2">
-                    <div class="flex justify-between text-xs">
-                      <span class="text-slate-400">Timeliness</span>
-                      <span class="text-white">{score.timeliness.score}</span>
-                    </div>
-                    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={`width: ${score.timeliness.score}%`}></div>
-                    </div>
-                    
-                    <div class="flex justify-between text-xs">
-                      <span class="text-slate-400">Popularity</span>
-                      <span class="text-white">{score.popularity.score}</span>
-                    </div>
-                    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={`width: ${score.popularity.score}%`}></div>
-                    </div>
-                    
-                    <div class="flex justify-between text-xs">
-                      <span class="text-slate-400">AI-Friendliness</span>
-                      <span class="text-white">{score.aiFriendliness.score}</span>
-                    </div>
-                    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={`width: ${score.aiFriendliness.score}%`}></div>
-                    </div>
-                    
-                    <div class="flex justify-between text-xs">
-                      <span class="text-slate-400">Community</span>
-                      <span class="text-white">{score.community.score}</span>
-                    </div>
-                    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={`width: ${score.community.score}%`}></div>
-                    </div>
-                  </div>
-                )}
-
-                <div class="flex gap-3 mt-4 pt-4 border-t border-white/5 text-xs text-[var(--text-muted)]">
-                  <span>⭐ {repo.data?.repo.stars.toLocaleString()}</span>
-                  <span>🍴 {repo.data?.repo.forks.toLocaleString()}</span>
-                  {repo.data?.npmInfo && (
-                    <span>📦 {repo.data.npmInfo.weeklyDownloads.toLocaleString()}/wk</span>
-                  )}
-                </div>
-              </a>
-            );
-          })}
-        </div>
-
-        <div class="glass-card p-6 rounded-2xl">
-          <h2 class="text-lg font-bold text-white mb-4">Summary</h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-white/10">
-                  <th class="text-left py-3 px-2 text-[var(--text-muted)] font-medium">Library</th>
-                  <th class="text-center py-3 px-2 text-[var(--text-muted)] font-medium">Overall</th>
-                  <th class="text-center py-3 px-2 text-[var(--text-muted)] font-medium">Timeliness</th>
-                  <th class="text-center py-3 px-2 text-[var(--text-muted)] font-medium">Popularity</th>
-                  <th class="text-center py-3 px-2 text-[var(--text-muted)] font-medium">AI-Friendly</th>
-                  <th class="text-center py-3 px-2 text-[var(--text-muted)] font-medium">Community</th>
-                </tr>
-              </thead>
-              <tbody>
-                {validRepos
-                  .sort((a, b) => (b.data?.scores[defaultLlmId]?.overall || 0) - (a.data?.scores[defaultLlmId]?.overall || 0))
-                  .map((repo, index) => {
-                    const score = repo.data?.scores[defaultLlmId];
-                    return (
-                      <tr class="border-b border-white/5">
-                        <td class="py-3 px-2">
-                          <div class="flex items-center gap-2">
-                            {index === 0 && <span class="text-yellow-400">🏆</span>}
-                            <a href={`/repo/${repo.slug}`} class="text-white hover:text-cyan-400 transition-colors">
-                              {repo.name}
-                            </a>
-                          </div>
-                        </td>
-                        <td class="text-center py-3 px-2">
-                          <span class={`font-bold ${getGradeColor(score?.grade || 'F')}`}>
-                            {score?.grade} · {score?.overall}
-                          </span>
-                        </td>
-                        <td class="text-center py-3 px-2 text-white">{score?.timeliness.score}</td>
-                        <td class="text-center py-3 px-2 text-white">{score?.popularity.score}</td>
-                        <td class="text-center py-3 px-2 text-white">{score?.aiFriendliness.score}</td>
-                        <td class="text-center py-3 px-2 text-white">{score?.community.score}</td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <CompareSection repos={compareRepos} client:load />
     )}
   </div>
 </Layout>

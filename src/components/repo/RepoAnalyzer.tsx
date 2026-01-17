@@ -133,7 +133,12 @@ export function RepoAnalyzer({ owner, name }: RepoAnalyzerProps) {
 
       <div className="grid lg:grid-cols-2 gap-8">
         <div className="glass-card rounded-2xl p-6">
-           <LLMComparison scores={scores} bestLLMId={bestLLMId} />
+           <LLMComparison 
+             scores={scores} 
+             bestLLMId={bestLLMId}
+             selectedLLMId={selectedLLMId}
+             onSelectLLM={setSelectedLLMId}
+           />
         </div>
 
         {selectedScore && (
