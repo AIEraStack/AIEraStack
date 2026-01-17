@@ -11,23 +11,51 @@ const env = Astro.locals?.runtime?.env;
 
 const featured = await getFeaturedRepos(env);
 
-const categoryOrder: RepoCategory[] = [
-  'framework', 
-  'ui-library', 
-  'state-management', 
-  'build-tool', 
-  'database', 
-  'api', 
-  'ai-ml',
-  'python-web',
-  'python-ai',
-  'python-data',
-  'go',
-  'rust',
-  'devops',
-  'mobile',
-  'desktop'
+const CATEGORY_GROUPS: {
+  id: string;
+  label: string;
+  description: string;
+  categories: RepoCategory[];
+}[] = [
+  {
+    id: 'ai',
+    label: 'AI',
+    description: 'LLM tooling and Python AI/data libraries.',
+    categories: ['ai-ml', 'python-ai', 'python-data'],
+  },
+  {
+    id: 'frontend',
+    label: 'Frontend',
+    description: 'Frameworks, UI kits, and state management.',
+    categories: ['framework', 'ui-library', 'state-management'],
+  },
+  {
+    id: 'backend',
+    label: 'Backend',
+    description: 'APIs, databases, and Python web.',
+    categories: ['api', 'database', 'python-web'],
+  },
+  {
+    id: 'tooling',
+    label: 'Tooling',
+    description: 'Build, test, and utility tooling.',
+    categories: ['build-tool', 'testing', 'utility'],
+  },
+  {
+    id: 'devices',
+    label: 'Devices',
+    description: 'Mobile, desktop, and cross-platform frameworks.',
+    categories: ['mobile', 'desktop', 'cross-platform'],
+  },
+  {
+    id: 'systems',
+    label: 'Systems',
+    description: 'Languages and infrastructure fundamentals.',
+    categories: ['go', 'rust', 'devops'],
+  },
 ];
+
+const categoryOrder: RepoCategory[] = CATEGORY_GROUPS.flatMap((group) => group.categories);
 
 const categorizedRepos = await Promise.all(
   categoryOrder.map(async (cat) => {
@@ -44,6 +72,19 @@ const categorizedRepos = await Promise.all(
     };
   })
 );
+
+const categorizedRepoMap = new Map(categorizedRepos.map((item) => [item.category, item]));
+
+const groupedRepos = CATEGORY_GROUPS.map((group) => {
+  const categories = group.categories
+    .map((category) => categorizedRepoMap.get(category))
+    .filter((item): item is (typeof categorizedRepos)[number] => Boolean(item && item.repos.length > 0));
+
+  return {
+    ...group,
+    categories,
+  };
+}).filter((group) => group.categories.length > 0);
 
 const examples = [
   'tanstack/query',
@@ -105,41 +146,53 @@ const examples = [
         <span class="text-[var(--text-muted)] text-sm">Scored for GPT-5.2-Codex</span>
       </div>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {categorizedRepos.filter(c => c.repos.length > 0).map((cat) => (
-          <div class="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300">
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <span class="text-2xl">{cat.meta.icon}</span>
-              {cat.meta.label}
-            </h3>
-            <div class="space-y-2">
-              {cat.repos.map((repo, i) => {
-                const score = repo.bestScore || 0;
-                return (
-                  <a
-                    href={`/repo/${repo.owner}/${repo.name}`}
-                    class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
-                  >
-                    <div class="flex items-center gap-3">
-                      <span class={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'text-[var(--text-muted)] bg-white/5'}`}>
-                        {i + 1}
-                      </span>
-                      <span class="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate max-w-[120px]">
-                        {repo.name}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <div class="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
-                          style={`width: ${score}%`}
-                        />
-                      </div>
-                      <span class="text-xs font-mono text-cyan-400 w-6">{score}</span>
-                    </div>
-                  </a>
-                );
-              })}
+      <div class="space-y-12">
+        {groupedRepos.map((group) => (
+          <div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
+              <div>
+                <h3 class="text-xl font-bold text-white">{group.label}</h3>
+                <p class="text-sm text-[var(--text-muted)]">{group.description}</p>
+              </div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+              {group.categories.map((cat) => (
+                <div class="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300">
+                  <h4 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="text-2xl">{cat.meta.icon}</span>
+                    {cat.meta.label}
+                  </h4>
+                  <div class="space-y-2">
+                    {cat.repos.map((repo, i) => {
+                      const score = repo.bestScore || 0;
+                      return (
+                        <a
+                          href={`/repo/${repo.owner}/${repo.name}`}
+                          class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+                        >
+                          <div class="flex items-center gap-3">
+                            <span class={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${i === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'text-[var(--text-muted)] bg-white/5'}`}>
+                              {i + 1}
+                            </span>
+                            <span class="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate max-w-[120px]">
+                              {repo.name}
+                            </span>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <div class="w-12 h-1 bg-gray-800 rounded-full overflow-hidden">
+                              <div
+                                class="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
+                                style={`width: ${score}%`}
+                              />
+                            </div>
+                            <span class="text-xs font-mono text-cyan-400 w-6">{score}</span>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}

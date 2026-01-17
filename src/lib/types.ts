@@ -26,6 +26,7 @@ export type RepoCategory =
   | 'go'
   | 'rust'
   | 'devops'
+  | 'cross-platform'
   | 'mobile'
   | 'desktop';
 
@@ -104,6 +105,11 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
     label: 'DevOps',
     icon: '🚀',
     description: 'Infrastructure and deployment tools',
+  },
+  'cross-platform': {
+    label: 'Cross-Platform',
+    icon: '🔗',
+    description: 'Cross-platform frameworks and runtimes',
   },
   'mobile': {
     label: 'Mobile',

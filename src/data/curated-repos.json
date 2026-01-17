@@ -143,12 +143,12 @@
 
     { "owner": "facebook", "name": "react-native", "category": "mobile", "featured": true },
     { "owner": "expo", "name": "expo", "category": "mobile", "featured": true },
-    { "owner": "flutter", "name": "flutter", "category": "mobile", "featured": true },
+    { "owner": "flutter", "name": "flutter", "category": "cross-platform", "featured": true },
     { "owner": "nicklockwood", "name": "SwiftFormat", "category": "mobile" },
     { "owner": "nicklockwood", "name": "iCarousel", "category": "mobile" },
 
-    { "owner": "electron", "name": "electron", "category": "desktop", "featured": true },
-    { "owner": "tauri-apps", "name": "tauri", "category": "desktop", "featured": true },
+    { "owner": "electron", "name": "electron", "category": "cross-platform", "featured": true },
+    { "owner": "tauri-apps", "name": "tauri", "category": "cross-platform", "featured": true },
     { "owner": "nicegui-org", "name": "nicegui", "category": "desktop" }
   ]
 }
