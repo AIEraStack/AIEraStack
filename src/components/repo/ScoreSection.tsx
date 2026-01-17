@@ -17,7 +17,7 @@ export function ScoreSection({ scores, defaultLLMId }: ScoreSectionProps) {
   const selectedLLM = getLLMById(selectedLLMId);
 
   return (
-    <div className="space-y-8">
+    <div className="grid gap-6 lg:grid-cols-2">
       <LLMComparison 
         scores={scores} 
         bestLLMId={bestLLMId}

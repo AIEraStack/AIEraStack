@@ -1,23 +1,35 @@
 import { useState, useEffect } from 'react';
-import { getLLMById, LLM_CONFIGS } from '../../lib/llm-configs';
+import { getLLMById } from '../../lib/llm-configs';
 import { LLMComparison } from './LLMComparison';
 import { DimensionBreakdown } from './DimensionBreakdown';
+import { BadgeCopy } from './BadgeCopy';
 import type { CachedRepoData } from '../../lib/types';
 
 interface RepoAnalyzerProps {
   owner: string;
   name: string;
+  initialData?: CachedRepoData | null;
+  defaultLLMId?: string;
 }
 
 type LoadingState = 'loading' | 'success' | 'error';
 
-export function RepoAnalyzer({ owner, name }: RepoAnalyzerProps) {
-  const [state, setState] = useState<LoadingState>('loading');
+export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = 'gpt-5.2-codex' }: RepoAnalyzerProps) {
+  const [state, setState] = useState<LoadingState>(initialData ? 'success' : 'loading');
   const [error, setError] = useState<string>('');
-  const [data, setData] = useState<CachedRepoData | null>(null);
-  const [selectedLLMId, setSelectedLLMId] = useState<string>('gpt-5.2-codex');
+  const [data, setData] = useState<CachedRepoData | null>(initialData);
+  const [selectedLLMId, setSelectedLLMId] = useState<string>(defaultLLMId);
 
   useEffect(() => {
+    const isInitialDataForRepo =
+      initialData &&
+      initialData.owner.toLowerCase() === owner.toLowerCase() &&
+      initialData.name.toLowerCase() === name.toLowerCase();
+
+    if (isInitialDataForRepo) {
+      return;
+    }
+
     async function loadData() {
       setState('loading');
       setError('');
@@ -40,7 +52,7 @@ export function RepoAnalyzer({ owner, name }: RepoAnalyzerProps) {
     }
 
     loadData();
-  }, [owner, name]);
+  }, [owner, name, initialData]);
 
   if (state === 'loading') {
     return <LoadingStateComponent />;
@@ -67,8 +79,8 @@ export function RepoAnalyzer({ owner, name }: RepoAnalyzerProps) {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-               <h1 className="text-4xl font-bold text-white tracking-tight">
-                {owner}<span className="text-cyan-500">/</span>{name}
+              <h1 className="text-4xl font-bold text-white tracking-tight">
+                {repo.owner}<span className="text-cyan-500">/</span>{repo.name}
               </h1>
               {repo.hasTypescript && (
                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">TS</span>
@@ -182,6 +194,10 @@ export function RepoAnalyzer({ owner, name }: RepoAnalyzerProps) {
             label={hasLlmsTxt ? 'Project provides llms.txt for optimized AI context' : 'No llms.txt found (standard context only)'}
           />
         </div>
+      </div>
+
+      <div className="mt-6">
+        <BadgeCopy owner={data.owner} name={data.name} />
       </div>
 
       <div className="mt-6 glass-card rounded-xl p-4">

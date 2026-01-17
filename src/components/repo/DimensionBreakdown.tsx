@@ -13,6 +13,10 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         Dimension Breakdown <span className="text-slate-400 font-normal">({llmName})</span>
       </h2>
 
+      <div className="mb-6">
+        <DimensionRadar score={score} />
+      </div>
+
       <div className="space-y-6">
         <DimensionSection
           name="Timeliness"
@@ -62,6 +66,123 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
           ]}
         />
       </div>
+    </div>
+  );
+}
+
+function DimensionRadar({ score }: { score: RepoScore }) {
+  const size = 220;
+  const center = size / 2;
+  const maxRadius = 70;
+  const labelRadius = 96;
+  const levels = [0.25, 0.5, 0.75, 1];
+
+  const axes = [
+    { label: 'Timeliness', value: score.timeliness.score, angle: -90 },
+    { label: 'Popularity', value: score.popularity.score, angle: 0 },
+    { label: 'AI Friendliness', value: score.aiFriendliness.score, angle: 90 },
+    { label: 'Community', value: score.community.score, angle: 180 },
+  ];
+
+  const toPoint = (angleDeg: number, radius: number) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return {
+      x: center + Math.cos(rad) * radius,
+      y: center + Math.sin(rad) * radius,
+    };
+  };
+
+  const clampScore = (value: number) => Math.max(0, Math.min(100, value));
+  const pointsForRadius = (radius: number) =>
+    axes
+      .map((axis) => {
+        const { x, y } = toPoint(axis.angle, radius);
+        return `${x},${y}`;
+      })
+      .join(' ');
+
+  const valuePoints = axes
+    .map((axis) => toPoint(axis.angle, (clampScore(axis.value) / 100) * maxRadius))
+    .map((point) => `${point.x},${point.y}`)
+    .join(' ');
+
+  return (
+    <div className="flex justify-center">
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        role="img"
+        aria-label="Dimension radar chart"
+        className="w-full max-w-[280px]"
+      >
+        <title>Dimension radar chart</title>
+
+        {levels.map((level) => (
+          <polygon
+            key={level}
+            points={pointsForRadius(maxRadius * level)}
+            fill="none"
+            stroke="rgba(148, 163, 184, 0.3)"
+            strokeWidth="1"
+          />
+        ))}
+
+        {axes.map((axis) => {
+          const { x, y } = toPoint(axis.angle, maxRadius);
+          return (
+            <line
+              key={axis.label}
+              x1={center}
+              y1={center}
+              x2={x}
+              y2={y}
+              stroke="rgba(148, 163, 184, 0.35)"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        <polygon
+          points={valuePoints}
+          fill="rgba(34, 211, 238, 0.15)"
+          stroke="#22d3ee"
+          strokeWidth="2"
+        />
+
+        {axes.map((axis) => {
+          const { x, y } = toPoint(axis.angle, (clampScore(axis.value) / 100) * maxRadius);
+          return (
+            <circle
+              key={`${axis.label}-point`}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="#22d3ee"
+              stroke="rgba(15, 23, 42, 0.6)"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {axes.map((axis) => {
+          const { x, y } = toPoint(axis.angle, labelRadius);
+          const textAnchor = axis.angle === 0 ? 'start' : axis.angle === 180 ? 'end' : 'middle';
+          return (
+            <text
+              key={`${axis.label}-label`}
+              x={x}
+              y={y}
+              textAnchor={textAnchor}
+              dominantBaseline="middle"
+              fontSize="10"
+              fill="#94a3b8"
+            >
+              {axis.label}
+            </text>
+          );
+        })}
+      </svg>
     </div>
   );
 }

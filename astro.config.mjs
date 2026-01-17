@@ -16,5 +16,9 @@ export default defineConfig({
         'react-dom/server': 'react-dom/server.edge',
       },
     },
+    ssr: {
+      // Ensure SSR deps are fully inlined for Workers (no require/module at runtime).
+      noExternal: true,
+    },
   },
 });
