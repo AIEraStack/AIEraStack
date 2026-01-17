@@ -1,4 +1,4 @@
-import type { CachedRepoData, RepoCategory, RepoIndex, RepoIndexEntry } from './types';
+import type { CachedRepoData, RepoCategory, RepoIndex, RepoIndexEntry, CuratedRepo } from './types';
 import type { RepoScore } from './scoring';
 
 interface R2Object {
@@ -15,11 +15,25 @@ export interface DataEnv {
 }
 
 let repoIndex: RepoIndex | null = null;
+let curatedRepos: CuratedRepo[] | null = null;
 
 function isRepoIndex(value: unknown): value is RepoIndex {
   if (!value || typeof value !== 'object') return false;
   const index = value as { repos?: unknown };
   return typeof index.repos === 'object' && index.repos !== null;
+}
+
+// Load curated repos list
+async function getCuratedReposList(): Promise<CuratedRepo[]> {
+  if (curatedRepos) return curatedRepos;
+  
+  try {
+    const data = await import('../data/curated-repos.json');
+    curatedRepos = data.default.repos as CuratedRepo[];
+    return curatedRepos;
+  } catch {
+    return [];
+  }
 }
 
 // Load from new split architecture: index.json
@@ -130,13 +144,25 @@ export async function getAllCachedReposDetailed(env?: DataEnv): Promise<CachedRe
 }
 
 export async function getFeaturedRepos(env?: DataEnv): Promise<RepoIndexEntry[]> {
-  const repos = await getAllCachedRepos(env);
-  return repos.filter((r) => r.featured);
+  const curated = await getCuratedReposList();
+  const index = await getRepoIndex(env);
+  
+  // Only return repos that are in the curated list and marked as featured
+  return curated
+    .filter((c) => c.featured)
+    .map((c) => index.repos[`${c.owner}/${c.name}`])
+    .filter((r): r is RepoIndexEntry => r !== undefined);
 }
 
 export async function getReposByCategory(category: RepoCategory, env?: DataEnv): Promise<RepoIndexEntry[]> {
-  const repos = await getAllCachedRepos(env);
-  return repos.filter((r) => r.category === category);
+  const curated = await getCuratedReposList();
+  const index = await getRepoIndex(env);
+  
+  // Only return repos that are in the curated list for this category
+  return curated
+    .filter((c) => c.category === category)
+    .map((c) => index.repos[`${c.owner}/${c.name}`])
+    .filter((r): r is RepoIndexEntry => r !== undefined);
 }
 
 export async function getStaticRepoPaths(env?: DataEnv): Promise<{ params: { slug: string } }[]> {

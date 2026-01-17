@@ -49,7 +49,7 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'build-tool': {
     label: 'Build Tools',
     icon: '⚡',
-    description: 'Bundlers, compilers, and dev tools',
+    description: 'Vite, Bun, Biome, and next-gen tooling',
   },
   'testing': {
     label: 'Testing',
@@ -69,7 +69,7 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'ai-ml': {
     label: 'AI & ML',
     icon: '🤖',
-    description: 'AI SDKs and machine learning tools',
+    description: 'LLM SDKs and AI integration tools',
   },
   'utility': {
     label: 'Utilities',
@@ -84,7 +84,7 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'python-ai': {
     label: 'Python AI',
     icon: '🧠',
-    description: 'Python AI/ML frameworks and tools',
+    description: 'LangChain, LlamaIndex, and AI frameworks',
   },
   'python-data': {
     label: 'Python Data',
