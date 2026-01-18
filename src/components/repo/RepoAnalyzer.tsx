@@ -21,12 +21,32 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
   
   // Ensure selectedLLMId is valid, fallback to best LLM if not found in scores
   const getInitialLLMId = () => {
-    if (!initialData?.scores) return defaultLLMId;
-    if (initialData.scores[defaultLLMId]) return defaultLLMId;
-    return getBestLLM(initialData.scores);
+    if (!initialData?.scores || Object.keys(initialData.scores).length === 0) {
+      return defaultLLMId;
+    }
+    if (initialData.scores[defaultLLMId]) {
+      return defaultLLMId;
+    }
+    const bestId = getBestLLM(initialData.scores);
+    // Double-check the best ID exists in scores
+    if (initialData.scores[bestId]) {
+      return bestId;
+    }
+    // Fallback to first available LLM
+    return Object.keys(initialData.scores)[0] || defaultLLMId;
   };
   
   const [selectedLLMId, setSelectedLLMId] = useState<string>(getInitialLLMId());
+
+  // Ensure selectedLLMId is always valid when data changes
+  useEffect(() => {
+    if (data?.scores && !data.scores[selectedLLMId]) {
+      const newLLMId = getBestLLM(data.scores);
+      if (data.scores[newLLMId]) {
+        setSelectedLLMId(newLLMId);
+      }
+    }
+  }, [data, selectedLLMId]);
 
   useEffect(() => {
     const isInitialDataForRepo =
@@ -230,7 +250,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
 }
 
 function getBestLLM(scores: Record<string, { overall: number }>): string {
-  let bestId = 'gpt-5.2-codex';
+  let bestId = '';
   let bestScore = -1;
   for (const [id, score] of Object.entries(scores)) {
     if (score.overall > bestScore) {
@@ -238,7 +258,11 @@ function getBestLLM(scores: Record<string, { overall: number }>): string {
       bestId = id;
     }
   }
-  return bestId;
+  // If no best ID found, return the first available LLM ID
+  if (!bestId && Object.keys(scores).length > 0) {
+    bestId = Object.keys(scores)[0];
+  }
+  return bestId || 'gpt-5.2-codex';
 }
 
 function StatBadge({ icon, label, value }: { icon: string; label: string; value: string }) {

@@ -7,6 +7,18 @@ interface DimensionBreakdownProps {
 }
 
 export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) {
+  // Guard against undefined score
+  if (!score || !score.coverage || !score.adoption || !score.documentation || !score.aiReadiness || !score.momentum || !score.maintenance) {
+    return (
+      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <h2 className="text-lg font-semibold mb-4 text-white">
+          Dimension Breakdown <span className="text-slate-400 font-normal">({llmName})</span>
+        </h2>
+        <p className="text-slate-400">Loading scores...</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
       <h2 className="text-lg font-semibold mb-4 text-white">

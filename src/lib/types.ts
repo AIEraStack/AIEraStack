@@ -11,115 +11,261 @@ export interface CuratedRepo {
 }
 
 export type RepoCategory =
-  | 'framework'
-  | 'ui-library'
-  | 'state-management'
-  | 'build-tool'
-  | 'testing'
-  | 'database'
-  | 'api'
-  | 'ai-ml'
-  | 'utility'
-  | 'python-web'
-  | 'python-ai'
-  | 'python-data'
-  | 'go'
-  | 'rust'
-  | 'devops'
-  | 'cross-platform'
-  | 'mobile'
-  | 'desktop';
+  // System Layer
+  | 'system-languages'
+  
+  // Frontend - Framework Comparison
+  | 'frontend-frameworks-core'
+  | 'frontend-frameworks-alt'
+  
+  // Frontend - Ecosystem
+  | 'frontend-react-ecosystem'
+  | 'frontend-vue-ecosystem'
+  
+  // Backend - Framework Comparison
+  | 'backend-go-web'
+  | 'backend-python-web'
+  | 'backend-rust-web'
+  | 'backend-nodejs-api'
+  
+  // Backend - Data Layer
+  | 'backend-go-data'
+  | 'backend-rust-data'
+  | 'backend-database-clients'
+  
+  // AI & ML - JS/TS
+  | 'ai-js-sdks'
+  
+  // AI & ML - Python
+  | 'ai-python-frameworks'
+  | 'ai-python-sdks'
+  | 'ai-python-inference'
+  | 'ai-python-vector'
+  
+  // Data Science
+  | 'data-core'
+  | 'data-ml'
+  | 'data-apps'
+  
+  // UI & Design
+  | 'ui-design-systems'
+  | 'ui-headless'
+  
+  // State & Data Management
+  | 'state-stores'
+  | 'state-data-fetching'
+  
+  // Developer Tooling
+  | 'tooling-bundlers'
+  | 'tooling-runtimes'
+  | 'tooling-workflow'
+  | 'tooling-testing'
+  | 'tooling-utilities'
+  
+  // Infrastructure & DevOps
+  | 'infra-containers'
+  | 'infra-iac'
+  | 'infra-observability'
+  
+  // Cross-Platform
+  | 'cross-platform-mobile'
+  | 'cross-platform-desktop';
 
 export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; description: string }> = {
-  'framework': {
-    label: 'Frameworks',
+  // System Layer
+  'system-languages': {
+    label: 'Backend Languages',
+    icon: '🌐',
+    description: 'Python, Go, Rust language ecosystems',
+  },
+  
+  // Frontend - Framework Comparison
+  'frontend-frameworks-core': {
+    label: 'Core Frameworks',
+    icon: '⚛️',
+    description: 'React, Vue, Preact - mainstream choices',
+  },
+  'frontend-frameworks-alt': {
+    label: 'Alternative Frameworks',
     icon: '🏗️',
-    description: 'Full-stack and frontend frameworks',
+    description: 'Svelte, Astro, Angular, Solid - modern alternatives',
   },
-  'ui-library': {
-    label: 'UI Libraries',
+  
+  // Frontend - Ecosystem
+  'frontend-react-ecosystem': {
+    label: 'React Ecosystem',
+    icon: '⚛️',
+    description: 'Next.js, Remix - React meta-frameworks',
+  },
+  'frontend-vue-ecosystem': {
+    label: 'Vue Ecosystem',
+    icon: '💚',
+    description: 'Nuxt - Vue meta-framework',
+  },
+  
+  // Backend - Framework Comparison
+  'backend-go-web': {
+    label: 'Go Web Frameworks',
+    icon: '🔷',
+    description: 'Gin, Fiber, Echo, Chi - Go web frameworks',
+  },
+  'backend-python-web': {
+    label: 'Python Web Frameworks',
+    icon: '🐍',
+    description: 'FastAPI, Django, Flask, Starlette - Python web',
+  },
+  'backend-rust-web': {
+    label: 'Rust Web Frameworks',
+    icon: '🦀',
+    description: 'Tokio, Axum, Actix - Rust async web',
+  },
+  'backend-nodejs-api': {
+    label: 'Node.js API Frameworks',
+    icon: '🔌',
+    description: 'tRPC, Hono, Fastify, Express - Node.js APIs',
+  },
+  
+  // Backend - Data Layer
+  'backend-go-data': {
+    label: 'Go Data Libraries',
+    icon: '💾',
+    description: 'GORM, Ent, sqlc - Go ORMs and data',
+  },
+  'backend-rust-data': {
+    label: 'Rust Data Libraries',
+    icon: '🦀',
+    description: 'Serde, SQLx, SeaORM, Diesel - Rust data',
+  },
+  'backend-database-clients': {
+    label: 'Database Clients',
+    icon: '🗄️',
+    description: 'Prisma, Drizzle, Kysely - TypeScript ORMs',
+  },
+  
+  // AI & ML - JS/TS
+  'ai-js-sdks': {
+    label: 'AI SDKs (JS/TS)',
+    icon: '🤖',
+    description: 'Vercel AI, LangChain, OpenAI, Anthropic - TS SDKs',
+  },
+  
+  // AI & ML - Python
+  'ai-python-frameworks': {
+    label: 'AI Frameworks',
+    icon: '🧠',
+    description: 'LangChain, LlamaIndex, CrewAI - AI orchestration',
+  },
+  'ai-python-sdks': {
+    label: 'LLM SDKs (Python)',
+    icon: '💬',
+    description: 'OpenAI, Anthropic, Transformers - Python SDKs',
+  },
+  'ai-python-inference': {
+    label: 'Inference Engines',
+    icon: '⚙️',
+    description: 'vLLM, Ollama - model inference',
+  },
+  'ai-python-vector': {
+    label: 'Vector Databases',
+    icon: '🔍',
+    description: 'Chroma, Qdrant, Pinecone - vector storage',
+  },
+  
+  // Data Science
+  'data-core': {
+    label: 'Data Processing',
+    icon: '📊',
+    description: 'Pandas, NumPy, Polars, Arrow - data core',
+  },
+  'data-ml': {
+    label: 'Machine Learning',
+    icon: '🤖',
+    description: 'PyTorch, scikit-learn, TensorFlow - ML frameworks',
+  },
+  'data-apps': {
+    label: 'Data Apps',
+    icon: '📈',
+    description: 'Streamlit, Gradio - data visualization apps',
+  },
+  
+  // UI & Design
+  'ui-design-systems': {
+    label: 'Design Systems',
     icon: '🎨',
-    description: 'Component libraries and design systems',
+    description: 'Tailwind, shadcn/ui, Material UI - complete systems',
   },
-  'state-management': {
-    label: 'State Management',
+  'ui-headless': {
+    label: 'Headless UI',
+    icon: '🎭',
+    description: 'Radix, HeadlessUI, Mantine - unstyled components',
+  },
+  
+  // State & Data Management
+  'state-stores': {
+    label: 'State Stores',
     icon: '🔄',
-    description: 'Application state and data flow',
+    description: 'Zustand, Redux, Jotai, XState - global state',
   },
-  'build-tool': {
-    label: 'Build Tools',
+  'state-data-fetching': {
+    label: 'Data Fetching',
+    icon: '🔀',
+    description: 'TanStack Query, Router - server state',
+  },
+  
+  // Developer Tooling
+  'tooling-bundlers': {
+    label: 'Bundlers',
+    icon: '📦',
+    description: 'Vite, esbuild, Rolldown - build tools',
+  },
+  'tooling-runtimes': {
+    label: 'Runtimes',
     icon: '⚡',
-    description: 'Vite, Bun, Biome, and next-gen tooling',
+    description: 'Bun - JavaScript runtimes',
   },
-  'testing': {
+  'tooling-workflow': {
+    label: 'Dev Workflow',
+    icon: '🛠️',
+    description: 'Biome, Turbo, pnpm - dev tooling',
+  },
+  'tooling-testing': {
     label: 'Testing',
     icon: '🧪',
-    description: 'Testing frameworks and utilities',
+    description: 'Vitest, Playwright, Cypress - testing tools',
   },
-  'database': {
-    label: 'Database',
-    icon: '🗄️',
-    description: 'ORMs, query builders, and database clients',
-  },
-  'api': {
-    label: 'API & Backend',
-    icon: '🔌',
-    description: 'API frameworks and server utilities',
-  },
-  'ai-ml': {
-    label: 'AI & ML',
-    icon: '🤖',
-    description: 'LLM SDKs and AI integration tools',
-  },
-  'utility': {
+  'tooling-utilities': {
     label: 'Utilities',
     icon: '🔧',
-    description: 'General-purpose utility libraries',
+    description: 'Zod, date-fns, lodash - utility libraries',
   },
-  'python-web': {
-    label: 'Python Web',
-    icon: '🐍',
-    description: 'Python web frameworks and APIs',
+  
+  // Infrastructure & DevOps
+  'infra-containers': {
+    label: 'Containers',
+    icon: '🐳',
+    description: 'Docker, Kubernetes - container orchestration',
   },
-  'python-ai': {
-    label: 'Python AI',
-    icon: '🧠',
-    description: 'LangChain, LlamaIndex, and AI frameworks',
+  'infra-iac': {
+    label: 'Infrastructure as Code',
+    icon: '🏗️',
+    description: 'Terraform, Pulumi, Helm - IaC tools',
   },
-  'python-data': {
-    label: 'Python Data',
+  'infra-observability': {
+    label: 'Observability',
     icon: '📊',
-    description: 'Python data science and analysis',
+    description: 'Grafana, Prometheus - monitoring',
   },
-  'go': {
-    label: 'Go',
-    icon: '🔷',
-    description: 'Go libraries and frameworks',
-  },
-  'rust': {
-    label: 'Rust',
-    icon: '🦀',
-    description: 'Rust libraries and frameworks',
-  },
-  'devops': {
-    label: 'DevOps',
-    icon: '🚀',
-    description: 'Infrastructure and deployment tools',
-  },
-  'cross-platform': {
-    label: 'Cross-Platform',
-    icon: '🔗',
-    description: 'Cross-platform frameworks and runtimes',
-  },
-  'mobile': {
+  
+  // Cross-Platform
+  'cross-platform-mobile': {
     label: 'Mobile',
     icon: '📱',
-    description: 'Mobile development frameworks',
+    description: 'React Native, Expo, Flutter - mobile frameworks',
   },
-  'desktop': {
+  'cross-platform-desktop': {
     label: 'Desktop',
     icon: '🖥️',
-    description: 'Desktop application frameworks',
+    description: 'Electron, Tauri - desktop frameworks',
   },
 };
 

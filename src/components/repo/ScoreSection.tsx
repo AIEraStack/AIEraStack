@@ -10,7 +10,15 @@ interface ScoreSectionProps {
 }
 
 export function ScoreSection({ scores, defaultLLMId }: ScoreSectionProps) {
-  const [selectedLLMId, setSelectedLLMId] = useState(defaultLLMId);
+  // Ensure initial LLM ID is valid
+  const getValidLLMId = () => {
+    if (scores[defaultLLMId]) return defaultLLMId;
+    const bestId = getBestLLM(scores);
+    if (scores[bestId]) return bestId;
+    return Object.keys(scores)[0] || defaultLLMId;
+  };
+  
+  const [selectedLLMId, setSelectedLLMId] = useState(getValidLLMId());
   
   const bestLLMId = getBestLLM(scores);
   const selectedScore = scores[selectedLLMId];
@@ -44,5 +52,9 @@ function getBestLLM(scores: AllLLMScores): string {
       bestId = id;
     }
   }
-  return bestId;
+  // If no best ID found, return the first available LLM ID
+  if (!bestId && Object.keys(scores).length > 0) {
+    bestId = Object.keys(scores)[0];
+  }
+  return bestId || 'gpt-5.2-codex';
 }
