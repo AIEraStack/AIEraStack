@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const AI_NAMES = [
-  'your AI',
+  'AI',
   'Sonnet',
   'Opus', 
   'Codex',
