@@ -22,12 +22,12 @@
     { "owner": "vuejs", "name": "core", "npmPackage": "vue", "category": "frontend-frameworks-core", "featured": true },
     { "owner": "angular", "name": "angular", "npmPackage": "@angular/core", "category": "frontend-frameworks-core", "featured": true },
     { "owner": "preactjs", "name": "preact", "npmPackage": "preact", "category": "frontend-frameworks-core", "featured": true },
-    { "owner": "lit", "name": "lit", "npmPackage": "lit", "category": "frontend-frameworks-core", "featured": true },
+    { "owner": "withastro", "name": "astro", "npmPackage": "astro", "category": "frontend-frameworks-core", "featured": true },
 
     { "owner": "sveltejs", "name": "svelte", "npmPackage": "svelte", "category": "frontend-frameworks-alt", "featured": true },
-    { "owner": "withastro", "name": "astro", "npmPackage": "astro", "category": "frontend-frameworks-alt", "featured": true },
     { "owner": "solidjs", "name": "solid", "npmPackage": "solid-js", "category": "frontend-frameworks-alt", "featured": true },
     { "owner": "BuilderIO", "name": "qwik", "npmPackage": "qwik", "category": "frontend-frameworks-alt", "featured": true },
+    { "owner": "lit", "name": "lit", "npmPackage": "lit", "category": "frontend-frameworks-alt", "featured": true },
 
     { "owner": "bigskysoftware", "name": "htmx", "category": "frontend-frameworks-html", "featured": true },
     { "owner": "alpinejs", "name": "alpine", "npmPackage": "alpinejs", "category": "frontend-frameworks-html", "featured": true },
