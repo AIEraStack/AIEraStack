@@ -18,7 +18,15 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
   const [state, setState] = useState<LoadingState>(initialData ? 'success' : 'loading');
   const [error, setError] = useState<string>('');
   const [data, setData] = useState<CachedRepoData | null>(initialData);
-  const [selectedLLMId, setSelectedLLMId] = useState<string>(defaultLLMId);
+  
+  // Ensure selectedLLMId is valid, fallback to best LLM if not found in scores
+  const getInitialLLMId = () => {
+    if (!initialData?.scores) return defaultLLMId;
+    if (initialData.scores[defaultLLMId]) return defaultLLMId;
+    return getBestLLM(initialData.scores);
+  };
+  
+  const [selectedLLMId, setSelectedLLMId] = useState<string>(getInitialLLMId());
 
   useEffect(() => {
     const isInitialDataForRepo =
@@ -44,6 +52,12 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
 
         const repoData: CachedRepoData = await response.json();
         setData(repoData);
+        
+        // Update selectedLLMId if current one is not in new scores
+        if (repoData.scores && !repoData.scores[selectedLLMId]) {
+          setSelectedLLMId(getBestLLM(repoData.scores));
+        }
+        
         setState('success');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load repository data');
@@ -163,38 +177,40 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
         )}
       </div>
 
-      <div className="mt-8 glass-card rounded-2xl p-8">
-        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          Detailed Insights
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <InsightItem
-            positive={selectedScore?.timeliness.details.releaseCovered as boolean}
-            label={
-              selectedScore?.timeliness.details.releaseCovered
-                ? `Latest release (${selectedScore.timeliness.details.latestRelease}) is within LLM training data`
-                : `Latest release (${selectedScore.timeliness.details.latestRelease}) is newer than LLM knowledge cutoff`
-            }
-          />
-          <InsightItem
-            positive={repo.stars > 1000}
-            label={`${formatNumber(repo.stars)} GitHub stars indicate strong presence in training data`}
-          />
-          <InsightItem
-            positive={selectedScore?.aiFriendliness.details.hasTypescript as boolean}
-            label={
-              selectedScore?.aiFriendliness.details.hasTypescript
-                ? 'Strong typing support helps LLM understand code structure'
-                : 'Lack of TypeScript makes inference harder for LLMs'
-            }
-          />
-          <InsightItem
-            positive={hasLlmsTxt}
-            label={hasLlmsTxt ? 'Project provides llms.txt for optimized AI context' : 'No llms.txt found (standard context only)'}
-          />
+      {selectedScore && (
+        <div className="mt-8 glass-card rounded-2xl p-8">
+          <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Detailed Insights
+          </h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <InsightItem
+              positive={selectedScore.coverage?.details?.releaseCovered as boolean}
+              label={
+                selectedScore.coverage?.details?.releaseCovered
+                  ? `Latest release (${selectedScore.coverage.details.latestRelease}) is within LLM training data`
+                  : `Latest release (${selectedScore.coverage?.details?.latestRelease || 'N/A'}) is newer than LLM knowledge cutoff`
+              }
+            />
+            <InsightItem
+              positive={repo.stars > 1000}
+              label={`${formatNumber(repo.stars)} GitHub stars indicate strong presence in training data`}
+            />
+            <InsightItem
+              positive={selectedScore.aiReadiness?.details?.hasTypescript as boolean}
+              label={
+                selectedScore.aiReadiness?.details?.hasTypescript
+                  ? 'Strong typing support helps LLM understand code structure'
+                  : 'Lack of TypeScript makes inference harder for LLMs'
+              }
+            />
+            <InsightItem
+              positive={hasLlmsTxt}
+              label={hasLlmsTxt ? 'Project provides llms.txt for optimized AI context' : 'No llms.txt found (standard context only)'}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-6">
         <BadgeCopy owner={data.owner} name={data.name} />
