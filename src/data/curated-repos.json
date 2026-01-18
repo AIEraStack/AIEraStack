@@ -16,27 +16,42 @@
     { "owner": "anthropics", "name": "anthropic-sdk-python", "category": "ai-python-sdks", "featured": true },
     { "owner": "huggingface", "name": "transformers", "category": "ai-python-sdks", "featured": true },
     { "owner": "BerriAI", "name": "litellm", "category": "ai-python-sdks", "featured": true },
-
-    { "owner": "vllm-project", "name": "vllm", "category": "ai-python-inference", "featured": true },
-    { "owner": "ollama", "name": "ollama-python", "category": "ai-python-inference", "featured": true },
-
-    { "owner": "chroma-core", "name": "chroma", "category": "ai-python-vector", "featured": true },
-    { "owner": "qdrant", "name": "qdrant", "category": "ai-python-vector", "featured": true },
-    { "owner": "pinecone-io", "name": "pinecone-python-client", "category": "ai-python-vector", "featured": true },
+    { "owner": "cohere-ai", "name": "cohere-python", "category": "ai-python-sdks", "featured": true },
 
     { "owner": "facebook", "name": "react", "npmPackage": "react", "category": "frontend-frameworks-core", "featured": true },
     { "owner": "vuejs", "name": "core", "npmPackage": "vue", "category": "frontend-frameworks-core", "featured": true },
+    { "owner": "angular", "name": "angular", "npmPackage": "@angular/core", "category": "frontend-frameworks-core", "featured": true },
     { "owner": "preactjs", "name": "preact", "npmPackage": "preact", "category": "frontend-frameworks-core", "featured": true },
+    { "owner": "lit", "name": "lit", "npmPackage": "lit", "category": "frontend-frameworks-core", "featured": true },
 
     { "owner": "sveltejs", "name": "svelte", "npmPackage": "svelte", "category": "frontend-frameworks-alt", "featured": true },
     { "owner": "withastro", "name": "astro", "npmPackage": "astro", "category": "frontend-frameworks-alt", "featured": true },
-    { "owner": "angular", "name": "angular", "npmPackage": "@angular/core", "category": "frontend-frameworks-alt", "featured": true },
     { "owner": "solidjs", "name": "solid", "npmPackage": "solid-js", "category": "frontend-frameworks-alt", "featured": true },
+    { "owner": "BuilderIO", "name": "qwik", "npmPackage": "qwik", "category": "frontend-frameworks-alt", "featured": true },
+
+    { "owner": "bigskysoftware", "name": "htmx", "category": "frontend-frameworks-html", "featured": true },
+    { "owner": "alpinejs", "name": "alpine", "npmPackage": "alpinejs", "category": "frontend-frameworks-html", "featured": true },
+    { "owner": "hotwired", "name": "turbo", "npmPackage": "@hotwired/turbo", "category": "frontend-frameworks-html", "featured": true },
+    { "owner": "hotwired", "name": "stimulus", "npmPackage": "@hotwired/stimulus", "category": "frontend-frameworks-html", "featured": true },
+    { "owner": "vuejs", "name": "petite-vue", "category": "frontend-frameworks-html", "featured": true },
 
     { "owner": "vercel", "name": "next.js", "npmPackage": "next", "category": "frontend-react-ecosystem", "featured": true },
     { "owner": "remix-run", "name": "remix", "npmPackage": "@remix-run/react", "category": "frontend-react-ecosystem", "featured": true },
+    { "owner": "gatsbyjs", "name": "gatsby", "npmPackage": "gatsby", "category": "frontend-react-ecosystem", "featured": true },
+    { "owner": "redwoodjs", "name": "redwood", "category": "frontend-react-ecosystem", "featured": true },
+    { "owner": "remix-run", "name": "react-router", "npmPackage": "react-router", "category": "frontend-react-ecosystem", "featured": true },
 
     { "owner": "nuxt", "name": "nuxt", "npmPackage": "nuxt", "category": "frontend-vue-ecosystem", "featured": true },
+    { "owner": "vuejs", "name": "router", "npmPackage": "vue-router", "category": "frontend-vue-ecosystem", "featured": true },
+    { "owner": "vuejs", "name": "pinia", "npmPackage": "pinia", "category": "frontend-vue-ecosystem", "featured": true },
+    { "owner": "vuejs", "name": "vitepress", "npmPackage": "vitepress", "category": "frontend-vue-ecosystem", "featured": true },
+    { "owner": "quasarframework", "name": "quasar", "npmPackage": "quasar", "category": "frontend-vue-ecosystem", "featured": true },
+
+    { "owner": "sveltejs", "name": "kit", "npmPackage": "@sveltejs/kit", "category": "frontend-svelte-ecosystem", "featured": true },
+    { "owner": "sveltejs", "name": "language-tools", "npmPackage": "svelte-language-server", "category": "frontend-svelte-ecosystem", "featured": true },
+    { "owner": "sveltejs", "name": "vite-plugin-svelte", "npmPackage": "@sveltejs/vite-plugin-svelte", "category": "frontend-svelte-ecosystem", "featured": true },
+    { "owner": "sveltejs", "name": "svelte-preprocess", "npmPackage": "svelte-preprocess", "category": "frontend-svelte-ecosystem", "featured": true },
+    { "owner": "svelte-add", "name": "svelte-add", "category": "frontend-svelte-ecosystem", "featured": true },
 
     { "owner": "fastapi", "name": "fastapi", "category": "backend-python-web", "featured": true },
     { "owner": "django", "name": "django", "category": "backend-python-web", "featured": true },
@@ -53,6 +68,8 @@
     { "owner": "tokio-rs", "name": "tokio", "category": "backend-rust-web", "featured": true },
     { "owner": "tokio-rs", "name": "axum", "category": "backend-rust-web", "featured": true },
     { "owner": "actix", "name": "actix-web", "category": "backend-rust-web", "featured": true },
+    { "owner": "rwf2", "name": "Rocket", "category": "backend-rust-web", "featured": true },
+    { "owner": "seanmonstar", "name": "warp", "category": "backend-rust-web", "featured": true },
 
     { "owner": "trpc", "name": "trpc", "npmPackage": "@trpc/server", "category": "backend-nodejs-api", "featured": true },
     { "owner": "honojs", "name": "hono", "npmPackage": "hono", "category": "backend-nodejs-api", "featured": true },
@@ -64,15 +81,19 @@
     { "owner": "drizzle-team", "name": "drizzle-orm", "npmPackage": "drizzle-orm", "category": "backend-database-clients", "featured": true },
     { "owner": "kysely-org", "name": "kysely", "npmPackage": "kysely", "category": "backend-database-clients", "featured": true },
     { "owner": "supabase", "name": "supabase-js", "npmPackage": "@supabase/supabase-js", "category": "backend-database-clients", "featured": true },
+    { "owner": "typeorm", "name": "typeorm", "npmPackage": "typeorm", "category": "backend-database-clients", "featured": true },
 
     { "owner": "go-gorm", "name": "gorm", "category": "backend-go-data", "featured": true },
     { "owner": "ent", "name": "ent", "category": "backend-go-data", "featured": true },
     { "owner": "sqlc-dev", "name": "sqlc", "category": "backend-go-data", "featured": true },
+    { "owner": "jmoiron", "name": "sqlx", "category": "backend-go-data", "featured": true },
+    { "owner": "uptrace", "name": "bun", "category": "backend-go-data", "featured": true },
 
     { "owner": "serde-rs", "name": "serde", "category": "backend-rust-data", "featured": true },
     { "owner": "launchbadge", "name": "sqlx", "category": "backend-rust-data", "featured": true },
     { "owner": "SeaQL", "name": "sea-orm", "category": "backend-rust-data", "featured": true },
     { "owner": "diesel-rs", "name": "diesel", "category": "backend-rust-data", "featured": true },
+    { "owner": "mongodb", "name": "mongo-rust-driver", "category": "backend-rust-data", "featured": true },
 
     { "owner": "pandas-dev", "name": "pandas", "category": "data-core", "featured": true },
     { "owner": "numpy", "name": "numpy", "category": "data-core", "featured": true },
@@ -83,9 +104,14 @@
     { "owner": "scikit-learn", "name": "scikit-learn", "category": "data-ml", "featured": true },
     { "owner": "pytorch", "name": "pytorch", "category": "data-ml", "featured": true },
     { "owner": "tensorflow", "name": "tensorflow", "category": "data-ml", "featured": true },
+    { "owner": "keras-team", "name": "keras", "category": "data-ml", "featured": true },
+    { "owner": "dmlc", "name": "xgboost", "category": "data-ml", "featured": true },
 
     { "owner": "streamlit", "name": "streamlit", "category": "data-apps", "featured": true },
     { "owner": "gradio-app", "name": "gradio", "category": "data-apps", "featured": true },
+    { "owner": "plotly", "name": "dash", "category": "data-apps", "featured": true },
+    { "owner": "bokeh", "name": "bokeh", "category": "data-apps", "featured": true },
+    { "owner": "voila-dashboards", "name": "voila", "category": "data-apps", "featured": true },
 
     { "owner": "tailwindlabs", "name": "tailwindcss", "npmPackage": "tailwindcss", "category": "ui-design-systems", "featured": true },
     { "owner": "shadcn-ui", "name": "ui", "category": "ui-design-systems", "featured": true },
@@ -107,20 +133,30 @@
 
     { "owner": "TanStack", "name": "query", "npmPackage": "@tanstack/react-query", "category": "state-data-fetching", "featured": true },
     { "owner": "TanStack", "name": "router", "npmPackage": "@tanstack/react-router", "category": "state-data-fetching", "featured": true },
+    { "owner": "vercel", "name": "swr", "npmPackage": "swr", "category": "state-data-fetching", "featured": true },
+    { "owner": "apollographql", "name": "apollo-client", "npmPackage": "@apollo/client", "category": "state-data-fetching", "featured": true },
+    { "owner": "urql-graphql", "name": "urql", "npmPackage": "urql", "category": "state-data-fetching", "featured": true },
 
     { "owner": "vitejs", "name": "vite", "npmPackage": "vite", "category": "tooling-bundlers", "featured": true },
+    { "owner": "webpack", "name": "webpack", "npmPackage": "webpack", "category": "tooling-bundlers", "featured": true },
     { "owner": "evanw", "name": "esbuild", "npmPackage": "esbuild", "category": "tooling-bundlers", "featured": true },
     { "owner": "rolldown", "name": "rolldown", "npmPackage": "rolldown", "category": "tooling-bundlers", "featured": true },
     { "owner": "swc-project", "name": "swc", "npmPackage": "@swc/core", "category": "tooling-bundlers", "featured": true },
 
+    { "owner": "nodejs", "name": "node", "category": "tooling-runtimes", "featured": true },
+    { "owner": "denoland", "name": "deno", "category": "tooling-runtimes", "featured": true },
     { "owner": "oven-sh", "name": "bun", "category": "tooling-runtimes", "featured": true },
+    { "owner": "cloudflare", "name": "workerd", "category": "tooling-runtimes", "featured": true },
+    { "owner": "facebook", "name": "hermes", "category": "tooling-runtimes", "featured": true },
 
     { "owner": "biomejs", "name": "biome", "npmPackage": "@biomejs/biome", "category": "tooling-workflow", "featured": true },
     { "owner": "vercel", "name": "turbo", "npmPackage": "turbo", "category": "tooling-workflow", "featured": true },
     { "owner": "oxc-project", "name": "oxc", "npmPackage": "oxlint", "category": "tooling-workflow", "featured": true },
     { "owner": "pnpm", "name": "pnpm", "npmPackage": "pnpm", "category": "tooling-workflow", "featured": true },
+    { "owner": "nrwl", "name": "nx", "npmPackage": "nx", "category": "tooling-workflow", "featured": true },
 
     { "owner": "vitest-dev", "name": "vitest", "npmPackage": "vitest", "category": "tooling-testing", "featured": true },
+    { "owner": "jestjs", "name": "jest", "npmPackage": "jest", "category": "tooling-testing", "featured": true },
     { "owner": "microsoft", "name": "playwright", "npmPackage": "@playwright/test", "category": "tooling-testing", "featured": true },
     { "owner": "testing-library", "name": "react-testing-library", "npmPackage": "@testing-library/react", "category": "tooling-testing", "featured": true },
     { "owner": "cypress-io", "name": "cypress", "npmPackage": "cypress", "category": "tooling-testing", "featured": true },
@@ -143,8 +179,11 @@
     { "owner": "rust-lang", "name": "rust-clippy", "category": "tooling-utilities" },
     { "owner": "lucia-auth", "name": "lucia", "npmPackage": "lucia", "category": "tooling-utilities" },
 
+    { "owner": "moby", "name": "moby", "category": "infra-containers", "featured": true },
     { "owner": "docker", "name": "compose", "category": "infra-containers", "featured": true },
     { "owner": "kubernetes", "name": "kubernetes", "category": "infra-containers", "featured": true },
+    { "owner": "containerd", "name": "containerd", "category": "infra-containers", "featured": true },
+    { "owner": "k3s-io", "name": "k3s", "category": "infra-containers", "featured": true },
 
     { "owner": "hashicorp", "name": "terraform", "category": "infra-iac", "featured": true },
     { "owner": "pulumi", "name": "pulumi", "category": "infra-iac", "featured": true },
@@ -153,14 +192,26 @@
 
     { "owner": "grafana", "name": "grafana", "category": "infra-observability", "featured": true },
     { "owner": "prometheus", "name": "prometheus", "category": "infra-observability", "featured": true },
+    { "owner": "open-telemetry", "name": "opentelemetry-collector", "category": "infra-observability", "featured": true },
+    { "owner": "jaegertracing", "name": "jaeger", "category": "infra-observability", "featured": true },
+    { "owner": "grafana", "name": "loki", "category": "infra-observability", "featured": true },
 
     { "owner": "facebook", "name": "react-native", "category": "cross-platform-mobile", "featured": true },
     { "owner": "expo", "name": "expo", "category": "cross-platform-mobile", "featured": true },
     { "owner": "flutter", "name": "flutter", "category": "cross-platform-mobile", "featured": true },
-    { "owner": "nicklockwood", "name": "SwiftFormat", "category": "cross-platform-mobile" },
-    { "owner": "nicklockwood", "name": "iCarousel", "category": "cross-platform-mobile" },
+    { "owner": "ionic-team", "name": "ionic-framework", "npmPackage": "@ionic/angular", "category": "cross-platform-mobile", "featured": true },
+    { "owner": "ionic-team", "name": "capacitor", "npmPackage": "@capacitor/core", "category": "cross-platform-mobile", "featured": true },
 
     { "owner": "electron", "name": "electron", "category": "cross-platform-desktop", "featured": true },
-    { "owner": "tauri-apps", "name": "tauri", "category": "cross-platform-desktop", "featured": true }
+    { "owner": "tauri-apps", "name": "tauri", "category": "cross-platform-desktop", "featured": true },
+    { "owner": "nwjs", "name": "nw.js", "category": "cross-platform-desktop", "featured": true },
+    { "owner": "neutralinojs", "name": "neutralinojs", "category": "cross-platform-desktop", "featured": true },
+    { "owner": "wailsapp", "name": "wails", "category": "cross-platform-desktop", "featured": true },
+
+    { "owner": "oclif", "name": "oclif", "npmPackage": "oclif", "category": "cross-platform-cli", "featured": true },
+    { "owner": "tj", "name": "commander.js", "npmPackage": "commander", "category": "cross-platform-cli", "featured": true },
+    { "owner": "yargs", "name": "yargs", "npmPackage": "yargs", "category": "cross-platform-cli", "featured": true },
+    { "owner": "pallets", "name": "click", "category": "cross-platform-cli", "featured": true },
+    { "owner": "tiangolo", "name": "typer", "category": "cross-platform-cli", "featured": true }
   ]
 }

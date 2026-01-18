@@ -98,8 +98,7 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                     key={cat.category}
                     className="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300"
                   >
-                    <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                      <span className="text-2xl">{cat.meta.icon}</span>
+                    <h4 className="text-lg font-bold text-white mb-4">
                       {cat.meta.label}
                     </h4>
                     <div className="space-y-2">

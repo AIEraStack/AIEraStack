@@ -4,9 +4,9 @@
 
 ## Project Overview
 
-**AI Era Stack** evaluates how well LLMs understand GitHub projects, helping developers choose AI-friendly tech stacks.
+AI Era Stack evaluates how well LLMs understand GitHub projects, helping developers choose AI-friendly tech stacks.
 
-**Live site**: https://aierastack.com
+Live site: https://aierastack.com
 
 ## Tech Stack
 
@@ -15,23 +15,26 @@
 - **Styling**: Tailwind CSS 4
 - **Hosting**: Cloudflare Pages
 - **Storage**: Cloudflare R2
-- **API**: Cloudflare Pages Functions
+- **API**: Astro API routes (Cloudflare Pages runtime)
+- **Adapter**: `@astrojs/cloudflare`
 
 ## Project Structure
 
 ```
 ├── src/
-│   ├── components/       # React components (islands)
-│   │   └── repo/         # Repository analysis components
+│   ├── components/       # React islands
+│   │   ├── compare/      # Compare UI
+│   │   ├── home/         # Homepage sections
+│   │   └── repo/         # Repository analysis UI
 │   ├── layouts/          # Astro layouts
-│   ├── pages/            # Astro pages (file-based routing)
+│   ├── pages/            # Astro pages + API routes
+│   │   ├── api/          # /api/repo
+│   │   ├── badge/        # SVG badge routes
 │   │   └── repo/         # Dynamic repo pages
-│   ├── lib/              # Shared utilities and types
-│   ├── data/             # Curated repos config
+│   ├── lib/              # Utilities, scoring, types
+│   ├── data/             # Curated list + cache snapshots
 │   └── styles/           # Global CSS
-├── functions/            # Cloudflare Pages Functions
-│   └── api/              # API endpoints
-├── scripts/              # Data fetching scripts
+├── scripts/              # Data fetch + R2 sync scripts
 └── public/               # Static assets
 ```
 
@@ -39,62 +42,81 @@
 
 | File | Purpose |
 |------|---------|
-| `src/pages/repo/[...slug].astro` | Dynamic repo pages (SSR) |
-| `src/pages/api/repo.ts` | On-demand GitHub data fetching API |
+| `src/pages/index.astro` | Home page with search and curated sections |
+| `src/pages/repo/[...slug].astro` | Repo page shell; preloads data for `RepoAnalyzer` |
+| `src/pages/compare.astro` | Compare page shell; preloads data for `CompareSection` |
+| `src/pages/api/repo.ts` | On-demand GitHub + npm fetch, scoring, R2 cache + index update |
 | `src/pages/badge/[...path].ts` | SVG badge generation API |
-| `src/components/repo/RepoAnalyzer.tsx` | Client-side repo analysis |
-| `src/lib/data-loader.ts` | Load cached repo data from R2 |
+| `src/components/repo/RepoAnalyzer.tsx` | Client repo analysis UI and fallback fetch |
+| `src/components/compare/CompareSection.tsx` | Client compare UI |
+| `src/lib/data-loader.ts` | R2/local cache read-write helpers |
+| `src/lib/scoring.ts` | Scoring algorithm and weights |
 | `src/lib/llm-configs.ts` | LLM configurations and cutoff dates |
-| `src/data/curated-repos.json` | List of pre-cached repositories |
-| `scripts/fetch-data.ts` | Batch data fetching script |
+| `src/data/curated-repos.json` | Curated repo list |
+| `src/data/index.json` | Cached repo index (local fallback) |
+| `scripts/fetch-data.ts` | Batch data fetch for curated repos |
+| `scripts/r2-download.ts` | Download index + repo data from R2 |
 
 ## Architecture
 
-### Server-Side Rendering
+### Rendering and Data Loading
 
-- **All pages**: Server-side rendered by default
-- **Cached repos** (59 curated projects): SSR from R2 data, SEO optimized
-- **Uncached repos**: CSR with React, fetches via `/api/repo` endpoint
+- Astro renders the page shell and metadata. Repo and compare content are React islands.
+- Server preloads cached data via `getCachedRepo` and passes `initialData` into islands.
+- If `initialData` is missing or mismatched, the island fetches `/api/repo` on the client.
+
+### Cache Layout
+
+- R2 stores `index.json` plus per-repo files at `repos/{owner}/{name}.json`.
+- Local fallback uses `src/data/index.json` and `src/data/repos/`.
 
 ### Scoring Algorithm
 
-4 dimensions weighted:
-1. **Timeliness** (35%): Release date vs LLM training cutoff
-2. **Popularity** (30%): GitHub stars + npm downloads
-3. **AI-Friendliness** (20%): TypeScript, llms.txt presence
-4. **Community** (15%): Issue response health
+6 dimensions weighted:
+1. **Coverage** (25%): release and activity vs LLM cutoff
+2. **Adoption** (20%): stars, forks, and npm downloads
+3. **Documentation** (15%): README size and docs/examples/changelog presence
+4. **AI Readiness** (15%): TypeScript/types, llms.txt, topics, license
+5. **Momentum** (15%): commit frequency and release cadence
+6. **Maintenance** (10%): issue ratio and PR close time
 
 ### Data Flow
 
 ```
-User visits /repo/owner/name
-       ↓
-[...slug].astro checks R2 cache
-       ↓
-┌─────────────────┐     ┌──────────────────┐
-│ Cached?         │ YES │ Render full HTML │
-└────────┬────────┘     └──────────────────┘
-         │ NO
-         ↓
-┌─────────────────┐     ┌──────────────────┐
-│ Render React    │────→│ Call /api/repo   │
-│ <RepoAnalyzer>  │     │ → GitHub API     │
-└─────────────────┘     │ → Calculate      │
-                        │ → Cache to R2    │
-                        └──────────────────┘
+Request /repo/owner/name or /compare?repos=...
+    |
+    v
+Astro page calls getCachedRepo (R2 -> local)
+    |
+    +-- cache hit -> pass initialData to React island
+    |
+    +-- cache miss -> call /api/repo
+                        |
+                        v
+                 GitHub + npm fetch
+                 calculateScores()
+                 save repo + update index in R2
+                        |
+                        v
+                 pass initialData to React island
+    |
+    v
+React island renders; if initialData is missing, it fetches /api/repo client-side
 ```
 
 ## Development Commands
 
 ```bash
-npm run dev          # Start dev server (localhost:4321)
-npm run build        # Production build
-npm run fetch-data   # Fetch data for curated repos (needs GITHUB_TOKEN)
+npm run dev              # Start dev server (localhost:4321)
+npm run build            # Production build
+npm run preview          # Preview production build
+npm run fetch-data       # Fetch data for curated repos (needs GITHUB_TOKEN)
+npm run r2:download:all  # Download index + repos from R2 (needs wrangler auth)
 ```
 
 ## Code Style
 
-- **English only** — All code, comments, commit messages, and documentation (except `docs/` folder) must be in English
+- **English only** - All code, comments, commit messages, and documentation (except `docs/` folder) must be in English
 - TypeScript strict mode
 - React functional components with hooks
 - Astro components for static/SSR content
@@ -104,49 +126,38 @@ npm run fetch-data   # Fetch data for curated repos (needs GITHUB_TOKEN)
 ## Common Tasks
 
 ### Add a new curated repo
-Edit `src/data/curated-repos.json`, add entry with owner, name, category.
+Edit `src/data/curated-repos.json`, then run `npm run fetch-data` to refresh `src/data/index.json` and `src/data/repos/`.
 
 ### Modify scoring algorithm
-Edit `src/lib/scoring.ts` → `calculateScores()` function.
+Edit `src/lib/scoring.ts` -> `calculateScores()` and helper functions.
 
 ### Add new LLM
-Edit `src/lib/llm-configs.ts`, add to `LLM_CONFIGS` array.
+Edit `src/lib/llm-configs.ts`, add to `LLM_CONFIGS`.
+
+### Sync local cache from R2
+Run `npm run r2:download:all` (requires wrangler auth or Cloudflare API credentials).
 
 ### Change design/styling
 Global styles in `src/styles/global.css`, component styles via Tailwind classes.
 
 ## Key Decisions
 
-1. **Server-side rendering** — all pages rendered on-demand with access to R2 data, optimal for dynamic content
-2. **R2 over database** — simpler, JSON-based, good enough for this use case
-3. **Astro API routes** over separate Functions — unified codebase, TypeScript support, better DX
-4. **No auth** — public tool, no user accounts needed
+1. **Astro SSR + React islands** - render metadata server-side, interactive UI client-side
+2. **R2 over database** - JSON storage is simpler and sufficient
+3. **Astro API routes** over separate Functions - keep endpoints in `src/pages/api`
+4. **No auth** - public tool, no user accounts needed
 
 ## Deployment
 
-Deployed via **GitHub Actions + Cloudflare Pages (Direct Upload)**:
+Configured for Cloudflare Pages:
 
-1. **Build workflow** (`.github/workflows/build.yml`):
-   - Downloads `index.json` from R2
-   - Builds the project (`npm run build`)
-   - Deploys to Cloudflare Pages via `wrangler pages deploy`
-
-2. **Data update workflow** (`.github/workflows/update-data.yml`):
-   - Runs daily at 6:00 AM UTC
-   - Fetches fresh data for curated repos
-   - Updates R2 cache
-   - Triggers rebuild
-
-3. **Cloudflare Pages Settings**:
-   - Git integration: **Disabled** (using Direct Upload instead)
-   - R2 binding: `DATA_BUCKET` → `aierastack-data`
-   - Environment variables: Optional `GITHUB_TOKEN` for API rate limits
-
-See `DEPLOYMENT.md` for detailed configuration.
+- Build output: `dist` (`pages_build_output_dir` in `wrangler.toml`)
+- R2 binding: `DATA_BUCKET` -> `aierastack-data`
+- Optional environment variable: `GITHUB_TOKEN` for GitHub API rate limits
 
 ## Things to Avoid
 
-- **Don't use Chinese** — All codebase content must be in English (except internal `docs/` folder)
+- **Don't use Chinese** - All codebase content must be in English (except internal `docs/` folder)
 - Don't add authentication complexity
 - Don't add a database (R2 JSON is fine)
 - Don't over-engineer the scoring algorithm

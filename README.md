@@ -34,36 +34,6 @@ AI Era Stack analyzes any GitHub project and scores it across 4 dimensions:
 - **Curated catalog** — 59 popular projects pre-analyzed
 - **Real-time analysis** — uncached repos fetched on-demand
 
-## Tech Stack
-
-| Layer | Choice |
-|-------|--------|
-| Framework | [Astro 5](https://astro.build) (server mode) |
-| UI | [React 19](https://react.dev) (islands) |
-| Styling | [Tailwind CSS 4](https://tailwindcss.com) |
-| Hosting | [Cloudflare Pages](https://pages.cloudflare.com) |
-| Storage | [Cloudflare R2](https://www.cloudflare.com/r2) |
-| API | Astro API routes (Workers) |
-
-### Architecture
-
-```
-/repo/facebook/react
-        ↓
-┌──────────────────────┐
-│  Cached in R2?       │
-│  (curated projects)  │
-└──────────┬───────────┘
-           │
-    YES ───┼─── NO
-           │     │
-           ▼     ▼
-┌──────────┐   ┌──────────────┐
-│ SSR page │   │ CSR + API    │
-│ (SEO)    │   │ (on-demand)  │
-└──────────┘   └──────────────┘
-```
-
 ## Development
 
 ```bash
@@ -80,31 +50,25 @@ npm run build
 GITHUB_TOKEN=xxx npm run fetch-data
 ```
 
-## Deployment
-
-Deployed automatically via GitHub Actions:
-
-1. **Daily** — Updates data for curated repos
-2. **On push** — Builds and deploys to Cloudflare Pages
-
-### Required Secrets
-
-| Secret | Purpose |
-|--------|---------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare deployment |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare deployment + R2 |
-| `DATA_GITHUB_TOKEN` | GitHub API for data fetching |
-
 ## Why This Exists
 
 In the AI-assisted coding era, your choice of libraries matters more than ever. A well-documented, popular library with stable APIs will get better AI support than a cutting-edge but obscure one.
 
 AI Era Stack quantifies this tradeoff.
 
+## Contributing
+
+We welcome contributions! Feel free to:
+
+- 🐛 **Report bugs** — [Open an issue](https://github.com/AIEraStack/aierastack/issues)
+- 💡 **Suggest features** — [Start a discussion](https://github.com/AIEraStack/aierastack/issues)
+- 🔧 **Submit pull requests** — Improvements, bug fixes, and new features are appreciated
+
 ## License
 
 MIT
 
----
+## Contact
 
-Built by [Your Name](https://github.com/yourusername) — [Twitter](https://twitter.com/yourhandle)
+- 📧 Email: [aierastack@outlook.com](mailto:aierastack@outlook.com)
+- 𝕏 X/Twitter: [@AIEraStack](https://x.com/AIEraStack)

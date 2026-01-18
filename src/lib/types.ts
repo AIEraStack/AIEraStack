@@ -17,10 +17,12 @@ export type RepoCategory =
   // Frontend - Framework Comparison
   | 'frontend-frameworks-core'
   | 'frontend-frameworks-alt'
+  | 'frontend-frameworks-html'
   
   // Frontend - Ecosystem
   | 'frontend-react-ecosystem'
   | 'frontend-vue-ecosystem'
+  | 'frontend-svelte-ecosystem'
   
   // Backend - Framework Comparison
   | 'backend-go-web'
@@ -39,8 +41,6 @@ export type RepoCategory =
   // AI & ML - Python
   | 'ai-python-frameworks'
   | 'ai-python-sdks'
-  | 'ai-python-inference'
-  | 'ai-python-vector'
   
   // Data Science
   | 'data-core'
@@ -69,7 +69,8 @@ export type RepoCategory =
   
   // Cross-Platform
   | 'cross-platform-mobile'
-  | 'cross-platform-desktop';
+  | 'cross-platform-desktop'
+  | 'cross-platform-cli';
 
 export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; description: string }> = {
   // System Layer
@@ -88,19 +89,29 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'frontend-frameworks-alt': {
     label: 'Alternative Frameworks',
     icon: '🏗️',
-    description: 'Svelte, Astro, Angular, Solid - modern alternatives',
+    description: 'Svelte, Astro, Angular, Solid, Qwik - modern alternatives',
+  },
+  'frontend-frameworks-html': {
+    label: 'HTML-First Frameworks',
+    icon: '📄',
+    description: 'HTMX, Alpine, Turbo - lightweight HTML-first approaches',
   },
   
   // Frontend - Ecosystem
   'frontend-react-ecosystem': {
     label: 'React Ecosystem',
     icon: '⚛️',
-    description: 'Next.js, Remix - React meta-frameworks',
+    description: 'Next.js, Remix, Gatsby - React meta-frameworks',
   },
   'frontend-vue-ecosystem': {
     label: 'Vue Ecosystem',
     icon: '💚',
-    description: 'Nuxt - Vue meta-framework',
+    description: 'Nuxt, Router, Pinia - Vue meta-frameworks and tools',
+  },
+  'frontend-svelte-ecosystem': {
+    label: 'Svelte Ecosystem',
+    icon: '🧡',
+    description: 'SvelteKit, Vite Plugin - Svelte tooling',
   },
   
   // Backend - Framework Comparison
@@ -158,17 +169,7 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'ai-python-sdks': {
     label: 'LLM SDKs (Python)',
     icon: '💬',
-    description: 'OpenAI, Anthropic, Transformers - Python SDKs',
-  },
-  'ai-python-inference': {
-    label: 'Inference Engines',
-    icon: '⚙️',
-    description: 'vLLM, Ollama - model inference',
-  },
-  'ai-python-vector': {
-    label: 'Vector Databases',
-    icon: '🔍',
-    description: 'Chroma, Qdrant, Pinecone - vector storage',
+    description: 'OpenAI, Anthropic, Transformers, Cohere - Python SDKs',
   },
   
   // Data Science
@@ -216,12 +217,12 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
   'tooling-bundlers': {
     label: 'Bundlers',
     icon: '📦',
-    description: 'Vite, esbuild, Rolldown - build tools',
+    description: 'Vite, Webpack, esbuild, Rolldown - build tools',
   },
   'tooling-runtimes': {
     label: 'Runtimes',
     icon: '⚡',
-    description: 'Bun - JavaScript runtimes',
+    description: 'Node, Deno, Bun, Workerd - JavaScript runtimes',
   },
   'tooling-workflow': {
     label: 'Dev Workflow',
@@ -266,6 +267,11 @@ export const CATEGORY_META: Record<RepoCategory, { label: string; icon: string; 
     label: 'Desktop',
     icon: '🖥️',
     description: 'Electron, Tauri - desktop frameworks',
+  },
+  'cross-platform-cli': {
+    label: 'CLI',
+    icon: '⌨️',
+    description: 'oclif, Commander, yargs - CLI frameworks',
   },
 };
 
