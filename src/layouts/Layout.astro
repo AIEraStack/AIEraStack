@@ -23,6 +23,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -45,9 +46,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
     <header class="border-b border-[var(--border-color)] backdrop-blur-md sticky top-0 z-50">
       <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2 group">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/20">
-            A
-          </div>
+          <img src="/icon.svg" alt="AI Era Stack Logo" class="w-8 h-8 rounded-lg shadow-lg shadow-cyan-500/20" />
           <span class="text-xl font-bold tracking-tight text-white group-hover:text-cyan-400 transition-colors">
             AI Era Stack
           </span>
