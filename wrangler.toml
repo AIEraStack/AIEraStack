@@ -5,18 +5,3 @@ pages_build_output_dir = "dist"
 [[r2_buckets]]
 binding = "DATA_BUCKET"
 bucket_name = "aierastack-data"
-
-[observability]
-enabled = true
-head_sampling_rate = 1
-
-[observability.logs]
-enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
-
-[observability.traces]
-enabled = true
-head_sampling_rate = 1
-persist = true
