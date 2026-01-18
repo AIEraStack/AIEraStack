@@ -35,7 +35,7 @@ function badgeResponse(label: string, message: string, color: string): Response 
   return new Response(svg, {
     headers: {
       'Content-Type': 'image/svg+xml',
-      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+      'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=300',
       'Access-Control-Allow-Origin': '*',
     },
   });

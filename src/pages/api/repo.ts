@@ -33,7 +33,7 @@ function jsonResponse(data: unknown, status = 200): Response {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': status === 200 ? 'public, max-age=3600' : 'no-store',
+      'Cache-Control': status === 200 ? 'public, max-age=60, s-maxage=3600, stale-while-revalidate=3600' : 'no-store',
     },
   });
 }
