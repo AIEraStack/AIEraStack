@@ -35,7 +35,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         
       - name: Fetch data
-        run: npm run fetch-data -- --skip-existing
+        run: npm run fetch-data -- --min-hours=12
         env:
           GITHUB_TOKEN: ${{ secrets.DATA_GITHUB_TOKEN }}
 

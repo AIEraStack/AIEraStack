@@ -531,6 +531,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function parseNumberArg(flag: string): number | null {
+  const argIndex = process.argv.findIndex(arg => arg === flag || arg.startsWith(`${flag}=`));
+  if (argIndex === -1) return null;
+  const raw = process.argv[argIndex] === flag
+    ? process.argv[argIndex + 1]
+    : process.argv[argIndex].slice(flag.length + 1);
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+function getHoursSince(isoDate: string, nowMs: number): number | null {
+  const parsed = Date.parse(isoDate);
+  if (Number.isNaN(parsed)) return null;
+  return (nowMs - parsed) / (1000 * 60 * 60);
+}
+
 function loadExistingIndex(): Record<string, RepoIndexEntry> {
   try {
     const data = JSON.parse(readFileSync(INDEX_PATH, 'utf-8')) as { repos?: Record<string, RepoIndexEntry> };
@@ -622,18 +639,34 @@ async function main() {
   const index: Record<string, RepoIndexEntry> = { ...loadExistingIndex() };
   const errors: string[] = [];
   const skipExisting = process.argv.includes('--skip-existing');
+  const minHoursArg = parseNumberArg('--min-hours');
+  const minHours = minHoursArg && minHoursArg > 0 ? minHoursArg : null;
+
+  if (minHours) {
+    console.log(`Minimum fetch interval: ${minHours}h`);
+  }
   
   for (let i = 0; i < curatedRepos.length; i++) {
     const curated = curatedRepos[i];
     const key = `${curated.owner}/${curated.name}`;
     
-    if (skipExisting) {
-      const existingRepo = readRepoFile(curated.owner, curated.name);
-      if (existingRepo) {
-        if (!index[key]) {
-          index[key] = buildIndexEntry(existingRepo);
-        }
-        console.log(`[${i + 1}/${curatedRepos.length}] Skipping ${key} (cached)`);
+    const existingRepo = readRepoFile(curated.owner, curated.name);
+    if (existingRepo && !index[key]) {
+      index[key] = buildIndexEntry(existingRepo);
+    }
+
+    const existingFetchedAt = existingRepo?.fetchedAt ?? index[key]?.fetchedAt;
+
+    if (skipExisting && existingRepo) {
+      console.log(`[${i + 1}/${curatedRepos.length}] Skipping ${key} (cached)`);
+      continue;
+    }
+
+    if (minHours && existingFetchedAt) {
+      const hoursSince = getHoursSince(existingFetchedAt, Date.now());
+      if (hoursSince !== null && hoursSince < minHours) {
+        const roundedHours = Math.round(hoursSince * 10) / 10;
+        console.log(`[${i + 1}/${curatedRepos.length}] Skipping ${key} (fetched ${roundedHours}h ago)`);
         continue;
       }
     }
