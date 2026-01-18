@@ -1,4 +1,4 @@
-import type { CachedRepoData, RepoCategory, RepoIndex, RepoIndexEntry, CuratedRepo } from './types';
+import { DATA_VERSION, type CachedRepoData, type RepoCategory, type RepoIndex, type RepoIndexEntry, type CuratedRepo } from './types';
 import type { RepoScore } from './scoring';
 
 interface R2Object {
@@ -16,6 +16,10 @@ export interface DataEnv {
 
 let repoIndex: RepoIndex | null = null;
 let curatedRepos: CuratedRepo[] | null = null;
+
+function isDataVersionCurrent(data: CachedRepoData): boolean {
+  return typeof data.dataVersion === 'number' && data.dataVersion >= DATA_VERSION;
+}
 
 function isRepoIndex(value: unknown): value is RepoIndex {
   if (!value || typeof value !== 'object') return false;
@@ -113,10 +117,13 @@ export async function getRepoIndex(env?: DataEnv): Promise<RepoIndex> {
 export async function getCachedRepo(owner: string, name: string, env?: DataEnv): Promise<CachedRepoData | null> {
   // Try new split format first
   const repoData = await loadRepoFromR2(owner, name, env);
-  if (repoData) return repoData;
+  if (repoData && isDataVersionCurrent(repoData)) return repoData;
+  if (repoData) return null;
 
   if (!env?.DATA_BUCKET) {
-    return loadRepoFromLocal(owner, name);
+    const localData = await loadRepoFromLocal(owner, name);
+    if (localData && isDataVersionCurrent(localData)) return localData;
+    return null;
   }
 
   return null;

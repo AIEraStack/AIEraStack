@@ -12,9 +12,10 @@ const REPOS_DIR = join(DATA_DIR, 'repos');
 const GITHUB_API = 'https://api.github.com';
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 const NPM_DOWNLOADS = 'https://api.npmjs.org/downloads/point/last-week';
+const RELEASES_PER_PAGE = 100;
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const DATA_VERSION = 2;
+const DATA_VERSION = 4;
 
 interface CuratedRepo {
   owner: string;
@@ -196,16 +197,42 @@ async function fetchRepoInfo(owner: string, name: string): Promise<RepoInfo> {
   };
 }
 
+function isStableMajorRelease(release: ReleaseInfo): boolean {
+  if (release.isPrerelease) return false;
+  const match = release.tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+  if (!match) return false;
+  const minor = parseInt(match[2], 10);
+  const patch = match[3] ? parseInt(match[3], 10) : 0;
+  return minor === 0 && patch === 0;
+}
+
 async function fetchReleases(owner: string, name: string): Promise<ReleaseInfo[]> {
-  const response = await fetchWithRetry(`${GITHUB_API}/repos/${owner}/${name}/releases?per_page=10`, getHeaders());
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.map((release: Record<string, unknown>) => ({
-    tagName: release.tag_name as string,
-    name: (release.name as string) || (release.tag_name as string),
-    publishedAt: release.published_at as string,
-    isPrerelease: release.prerelease as boolean,
-  }));
+  const releases: ReleaseInfo[] = [];
+  let page = 1;
+
+  while (true) {
+    const response = await fetchWithRetry(
+      `${GITHUB_API}/repos/${owner}/${name}/releases?per_page=${RELEASES_PER_PAGE}&page=${page}`,
+      getHeaders()
+    );
+    if (!response.ok) return releases;
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) return releases;
+
+    const pageReleases = data.map((release: Record<string, unknown>) => ({
+      tagName: release.tag_name as string,
+      name: (release.name as string) || (release.tag_name as string),
+      publishedAt: release.published_at as string,
+      isPrerelease: release.prerelease as boolean,
+    }));
+
+    releases.push(...pageReleases);
+
+    if (pageReleases.some(isStableMajorRelease)) return releases;
+    if (data.length < RELEASES_PER_PAGE) return releases;
+
+    page += 1;
+  }
 }
 
 async function checkLlmsTxt(owner: string, name: string): Promise<boolean> {

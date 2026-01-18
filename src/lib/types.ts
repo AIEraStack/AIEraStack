@@ -365,4 +365,4 @@ export interface RepoIndex {
   repos: Record<string, RepoIndexEntry>; // key: owner/name
 }
 
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 4;

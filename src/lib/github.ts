@@ -31,6 +31,7 @@ export interface NpmInfo {
 }
 
 const GITHUB_API = 'https://api.github.com';
+const RELEASES_PER_PAGE = 100;
 
 function getGithubHeaders(token?: string): Record<string, string> {
   const headers: Record<string, string> = {
@@ -43,6 +44,15 @@ function getGithubHeaders(token?: string): Record<string, string> {
   }
 
   return headers;
+}
+
+function isStableMajorRelease(release: ReleaseInfo): boolean {
+  if (release.isPrerelease) return false;
+  const match = release.tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+  if (!match) return false;
+  const minor = Number.parseInt(match[2], 10);
+  const patch = match[3] ? Number.parseInt(match[3], 10) : 0;
+  return minor === 0 && patch === 0;
 }
 
 export async function fetchRepoInfo(owner: string, name: string, token?: string): Promise<RepoInfo> {
@@ -75,22 +85,46 @@ export async function fetchRepoInfo(owner: string, name: string, token?: string)
 }
 
 export async function fetchReleases(owner: string, name: string, token?: string): Promise<ReleaseInfo[]> {
-  const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/releases?per_page=10`, {
-    headers: getGithubHeaders(token),
-  });
+  const releases: ReleaseInfo[] = [];
+  let page = 1;
 
-  if (!response.ok) {
-    return [];
+  while (true) {
+    const response = await fetch(
+      `${GITHUB_API}/repos/${owner}/${name}/releases?per_page=${RELEASES_PER_PAGE}&page=${page}`,
+      {
+        headers: getGithubHeaders(token),
+      }
+    );
+
+    if (!response.ok) {
+      return releases;
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return releases;
+    }
+
+    const pageReleases = data.map((release: Record<string, unknown>) => ({
+      tagName: release.tag_name as string,
+      name: (release.name as string) || (release.tag_name as string),
+      publishedAt: release.published_at as string,
+      isPrerelease: release.prerelease as boolean,
+    }));
+
+    releases.push(...pageReleases);
+
+    if (pageReleases.some(isStableMajorRelease)) {
+      return releases;
+    }
+
+    if (data.length < RELEASES_PER_PAGE) {
+      return releases;
+    }
+
+    page += 1;
   }
-
-  const data = await response.json();
-
-  return data.map((release: Record<string, unknown>) => ({
-    tagName: release.tag_name as string,
-    name: release.name as string || release.tag_name as string,
-    publishedAt: release.published_at as string,
-    isPrerelease: release.prerelease as boolean,
-  }));
 }
 
 export async function checkLlmsTxt(owner: string, name: string, token?: string): Promise<boolean> {
