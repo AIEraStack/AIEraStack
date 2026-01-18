@@ -6,7 +6,7 @@ AI Era Stack helps developers evaluate how well LLMs (Sonnet, Opus, Codex, Gemin
 
 [**Try it live →**](https://aierastack.com)
 
-![AI Era Stack Screenshot](https://aierastack.com/og-image.png)
+![AI Era Stack Screenshot](https://aierastack.com/og-image.jpg)
 
 ## The Problem
 

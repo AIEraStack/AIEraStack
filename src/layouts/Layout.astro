@@ -10,7 +10,7 @@ interface Props {
 const { 
   title, 
   description = 'Stop using libraries Sonnet doesn\'t know. Pick the right stack for the AI era.',
-  ogImage = 'https://aierastack.com/og-image.png'
+  ogImage = 'https://aierastack.com/og-image.jpg'
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
@@ -34,6 +34,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
+    <meta name="google-site-verification" content="PapA5j_jdF64Yui-sUKB-Y2KrI8a7DyunRC8pgtzYGE" />
     <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
   </head>
