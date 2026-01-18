@@ -371,7 +371,16 @@ function calculateScores(
   for (const llm of LLM_CONFIGS) {
     // Coverage dimension
     const cutoff = new Date(llm.knowledgeCutoff);
-    const latestRelease = releases.find(r => !r.isPrerelease);
+    // Only consider stable major releases (x.0.0) for coverage
+    const stableMajorReleases = releases.filter(r => {
+      if (r.isPrerelease) return false;
+      const match = r.tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+      if (!match) return false;
+      const minor = parseInt(match[2], 10);
+      const patch = match[3] ? parseInt(match[3], 10) : 0;
+      return minor === 0 && patch === 0;
+    });
+    const latestRelease = stableMajorReleases[0] || null;
     const latestReleaseDate = latestRelease ? new Date(latestRelease.publishedAt) : null;
     const lastPush = new Date(repo.pushedAt);
     const createdAt = new Date(repo.createdAt);
