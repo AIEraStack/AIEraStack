@@ -8,6 +8,51 @@ export interface DimensionScore {
   details: Record<string, number | string | boolean>;
 }
 
+interface SemverVersion {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
+/**
+ * Parse semver from a release tag (e.g., "v1.2.3" or "1.2.3")
+ * Returns null if not a valid semver tag
+ */
+export function parseSemverTag(tagName: string): SemverVersion | null {
+  const match = tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+  if (!match) return null;
+  
+  return {
+    major: parseInt(match[1], 10),
+    minor: parseInt(match[2], 10),
+    patch: match[3] ? parseInt(match[3], 10) : 0,
+  };
+}
+
+/**
+ * Filter releases to only stable major versions (x.0.0)
+ * Used for coverage calculation
+ */
+export function filterStableMajorReleases(releases: ReleaseInfo[]): ReleaseInfo[] {
+  return releases.filter(r => {
+    if (r.isPrerelease) return false;
+    const semver = parseSemverTag(r.tagName);
+    return semver && semver.minor === 0 && semver.patch === 0;
+  });
+}
+
+/**
+ * Filter releases to stable minor/major versions (x.y.0)
+ * Used for release frequency calculation
+ */
+export function filterStableMinorReleases(releases: ReleaseInfo[]): ReleaseInfo[] {
+  return releases.filter(r => {
+    if (r.isPrerelease) return false;
+    const semver = parseSemverTag(r.tagName);
+    return semver && semver.patch === 0;
+  });
+}
+
 export interface RepoScore {
   overall: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
@@ -92,7 +137,9 @@ function calculateCoverage(
   llm: LLMConfig
 ): DimensionScore {
   const cutoff = new Date(llm.knowledgeCutoff);
-  const latestRelease = releases.find((r) => !r.isPrerelease);
+  // Only consider stable major releases (x.0.0) for coverage
+  const stableMajorReleases = filterStableMajorReleases(releases);
+  const latestRelease = stableMajorReleases[0] || null;
   const latestReleaseDate = latestRelease ? new Date(latestRelease.publishedAt) : null;
   const lastPush = new Date(repo.pushedAt);
   const createdAt = new Date(repo.createdAt);

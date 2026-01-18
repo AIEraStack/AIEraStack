@@ -279,9 +279,17 @@ function calculateCommitFrequency(commits: any[]): number {
 }
 
 function calculateAvgDaysBetweenReleases(releases: ReleaseInfo[]): number {
-  const nonPrereleases = releases.filter(r => !r.isPrerelease);
-  if (nonPrereleases.length < 2) return 0;
-  const dates = nonPrereleases.map(r => new Date(r.publishedAt).getTime()).sort((a, b) => b - a);
+  // Filter to stable minor/major releases (x.y.0) only
+  const stableReleases = releases.filter(r => {
+    if (r.isPrerelease) return false;
+    const match = r.tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
+    if (!match) return false;
+    const patch = match[3] ? parseInt(match[3], 10) : 0;
+    return patch === 0;
+  });
+  
+  if (stableReleases.length < 2) return 0;
+  const dates = stableReleases.map(r => new Date(r.publishedAt).getTime()).sort((a, b) => b - a);
   let totalDays = 0;
   for (let i = 0; i < dates.length - 1; i++) {
     totalDays += (dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24);

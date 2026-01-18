@@ -207,9 +207,11 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
             <InsightItem
               positive={selectedScore.coverage?.details?.releaseCovered as boolean}
               label={
-                selectedScore.coverage?.details?.releaseCovered
-                  ? `Latest release (${selectedScore.coverage.details.latestRelease}) is within LLM training data`
-                  : `Latest release (${selectedScore.coverage?.details?.latestRelease || 'N/A'}) is newer than LLM knowledge cutoff`
+                selectedScore.coverage?.details?.latestRelease === 'N/A'
+                  ? 'No stable major release (x.0.0) found'
+                  : selectedScore.coverage?.details?.releaseCovered
+                  ? `Latest stable major release (${selectedScore.coverage.details.latestRelease}) is within LLM training data`
+                  : `Latest stable major release (${selectedScore.coverage?.details?.latestRelease}) is newer than LLM knowledge cutoff`
               }
             />
             <InsightItem
