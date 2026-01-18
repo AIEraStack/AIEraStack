@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      full_update:
+        description: 'Run a full update (ignore min-hours)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: write
@@ -35,7 +41,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         
       - name: Fetch data
-        run: npm run fetch-data -- --min-hours=12
+        run: |
+          if [ "${{ inputs.full_update }}" = "true" ]; then
+            npm run fetch-data
+          else
+            npm run fetch-data -- --min-hours=12
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.DATA_GITHUB_TOKEN }}
 
