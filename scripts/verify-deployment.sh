@@ -79,7 +79,7 @@ echo ""
 # 3. Test Badge API
 echo "🏷️  Testing Badge API"
 test_endpoint "Badge - facebook/react" "${BASE_URL}/badge/facebook/react.svg" "<svg"
-test_endpoint "Badge - custom LLM" "${BASE_URL}/badge/facebook/react.svg?llm=claude-4.5-sonnet" "<svg"
+test_endpoint "Badge - custom LLM" "${BASE_URL}/badge/facebook/react.svg?llm=claude-4.5-opus" "<svg"
 
 echo ""
 

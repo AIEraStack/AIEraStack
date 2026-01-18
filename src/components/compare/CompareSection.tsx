@@ -316,7 +316,7 @@ export function CompareSection({ repos }: CompareSectionProps) {
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: llm.color }}
                       />
-                      <span className="text-xs">{llm.name.split(' ')[0]}</span>
+                      <span className="text-xs">{llm.name}</span>
                     </div>
                   </th>
                 ))}

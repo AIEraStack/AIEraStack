@@ -17,27 +17,11 @@ export const LLM_CONFIGS: LLMConfig[] = [
     color: '#10a37f',
   },
   {
-    id: 'gpt-5.2',
-    name: 'GPT-5.2',
-    provider: 'OpenAI',
-    knowledgeCutoff: '2025-08-31',
-    trainingCutoff: '2025-08-31',
-    color: '#10a37f',
-  },
-  {
     id: 'claude-4.5-opus',
-    name: 'Claude 4.5 Opus',
+    name: 'Claude 4.5 (Opus/Sonnet)',
     provider: 'Anthropic',
     knowledgeCutoff: '2025-05-01',
     trainingCutoff: '2025-08-01',
-    color: '#d4a574',
-  },
-  {
-    id: 'claude-4.5-sonnet',
-    name: 'Claude 4.5 Sonnet',
-    provider: 'Anthropic',
-    knowledgeCutoff: '2025-01-01',
-    trainingCutoff: '2025-07-01',
     color: '#d4a574',
   },
   {

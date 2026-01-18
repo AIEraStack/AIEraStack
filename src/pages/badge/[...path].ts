@@ -23,6 +23,12 @@ const GRADE_COLORS = {
 
 const DEFAULT_LLM = 'gpt-5.2-codex';
 
+// Legacy LLM ID aliases for backward compatibility
+const LLM_ALIASES: Record<string, string> = {
+  'gpt-5.2': 'gpt-5.2-codex',
+  'claude-4.5-sonnet': 'claude-4.5-opus',
+};
+
 function badgeResponse(label: string, message: string, color: string): Response {
   const svg = generateBadgeSVG(label, message, color);
   
@@ -88,7 +94,9 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     repo = repo.slice(0, -4);
   }
   
-  const llmId = url.searchParams.get('llm') || DEFAULT_LLM;
+  let llmId = url.searchParams.get('llm') || DEFAULT_LLM;
+  // Apply alias mapping for legacy LLM IDs
+  llmId = LLM_ALIASES[llmId] || llmId;
   const env = (locals?.runtime?.env as CloudflareEnv | undefined) ?? {};
   
   try {

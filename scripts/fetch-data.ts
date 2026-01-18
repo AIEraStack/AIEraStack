@@ -121,9 +121,7 @@ interface CachedRepoDataFile {
 
 const LLM_CONFIGS = [
   { id: 'gpt-5.2-codex', knowledgeCutoff: '2025-08-31' },
-  { id: 'gpt-5.2', knowledgeCutoff: '2025-08-31' },
   { id: 'claude-4.5-opus', knowledgeCutoff: '2025-05-01' },
-  { id: 'claude-4.5-sonnet', knowledgeCutoff: '2025-01-01' },
   { id: 'gemini-3-pro', knowledgeCutoff: '2025-01-01' },
 ];
 
