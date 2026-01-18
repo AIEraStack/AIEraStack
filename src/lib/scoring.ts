@@ -65,13 +65,50 @@ function calculateScoreForLLM(
   const momentum = calculateMomentum(activitySignals, releases);
   const maintenance = calculateMaintenance(repo, activitySignals);
 
+  // Apply model-specific weight adjustments
+  const profile = llm.profile;
+  const adjustedWeights = {
+    coverage: WEIGHTS.coverage * profile.coverageWeight,
+    adoption: WEIGHTS.adoption * profile.adoptionWeight,
+    documentation: WEIGHTS.documentation * profile.documentationWeight,
+    aiReadiness: WEIGHTS.aiReadiness * profile.aiReadinessWeight,
+    momentum: WEIGHTS.momentum * profile.momentumWeight,
+    maintenance: WEIGHTS.maintenance * profile.maintenanceWeight,
+  };
+
+  // Normalize weights to sum to 1.0
+  const totalWeight =
+    adjustedWeights.coverage +
+    adjustedWeights.adoption +
+    adjustedWeights.documentation +
+    adjustedWeights.aiReadiness +
+    adjustedWeights.momentum +
+    adjustedWeights.maintenance;
+
+  const normalizedWeights = {
+    coverage: adjustedWeights.coverage / totalWeight,
+    adoption: adjustedWeights.adoption / totalWeight,
+    documentation: adjustedWeights.documentation / totalWeight,
+    aiReadiness: adjustedWeights.aiReadiness / totalWeight,
+    momentum: adjustedWeights.momentum / totalWeight,
+    maintenance: adjustedWeights.maintenance / totalWeight,
+  };
+
   const overall =
-    coverage.score * WEIGHTS.coverage +
-    adoption.score * WEIGHTS.adoption +
-    documentation.score * WEIGHTS.documentation +
-    aiReadiness.score * WEIGHTS.aiReadiness +
-    momentum.score * WEIGHTS.momentum +
-    maintenance.score * WEIGHTS.maintenance;
+    coverage.score * normalizedWeights.coverage +
+    adoption.score * normalizedWeights.adoption +
+    documentation.score * normalizedWeights.documentation +
+    aiReadiness.score * normalizedWeights.aiReadiness +
+    momentum.score * normalizedWeights.momentum +
+    maintenance.score * normalizedWeights.maintenance;
+
+  // Add weight info to details for transparency
+  coverage.details.appliedWeight = Math.round(normalizedWeights.coverage * 100) / 100;
+  adoption.details.appliedWeight = Math.round(normalizedWeights.adoption * 100) / 100;
+  documentation.details.appliedWeight = Math.round(normalizedWeights.documentation * 100) / 100;
+  aiReadiness.details.appliedWeight = Math.round(normalizedWeights.aiReadiness * 100) / 100;
+  momentum.details.appliedWeight = Math.round(normalizedWeights.momentum * 100) / 100;
+  maintenance.details.appliedWeight = Math.round(normalizedWeights.maintenance * 100) / 100;
 
   return {
     overall: Math.round(overall),
@@ -97,20 +134,25 @@ function calculateCoverage(
   const lastPush = new Date(repo.pushedAt);
   const createdAt = new Date(repo.createdAt);
 
+  // Apply model-specific decay factor (higher factor = slower decay)
+  const decayFactor = llm.profile.coverageDecayFactor;
+  const releaseDecayRate = 0.5 / decayFactor;
+  const activityDecayRate = 0.3 / decayFactor;
+
   let releaseScore = 100;
   if (latestReleaseDate) {
     if (latestReleaseDate <= cutoff) {
       releaseScore = 100;
     } else {
       const daysBeyond = Math.floor((latestReleaseDate.getTime() - cutoff.getTime()) / (1000 * 60 * 60 * 24));
-      releaseScore = Math.max(20, 100 - daysBeyond * 0.5);
+      releaseScore = Math.max(20, 100 - daysBeyond * releaseDecayRate);
     }
   }
 
   let activityScore = 100;
   if (lastPush > cutoff) {
     const daysBeyond = Math.floor((lastPush.getTime() - cutoff.getTime()) / (1000 * 60 * 60 * 24));
-    activityScore = Math.max(30, 100 - daysBeyond * 0.3);
+    activityScore = Math.max(30, 100 - daysBeyond * activityDecayRate);
   }
 
   const maturityScore = createdAt < cutoff ? 100 : 50;
@@ -125,6 +167,7 @@ function calculateCoverage(
       maturityScore: Math.round(maturityScore),
       latestRelease: latestRelease?.tagName || 'N/A',
       releaseCovered: latestReleaseDate ? latestReleaseDate <= cutoff : true,
+      decayFactor: Math.round(decayFactor * 100) / 100,
     },
   };
 }

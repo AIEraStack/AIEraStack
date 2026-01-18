@@ -2,6 +2,11 @@ import 'dotenv/config';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { calculateScores as calculateScoresShared } from '../src/lib/scoring.js';
+import { LLM_CONFIGS } from '../src/lib/llm-configs.js';
+import type { RepoInfo as RepoInfoShared, ReleaseInfo as ReleaseInfoShared } from '../src/lib/github.js';
+import type { NpmPackageInfo as NpmPackageInfoShared } from '../src/lib/npm.js';
+import type { DocSignals as DocSignalsShared, ActivitySignals as ActivitySignalsShared } from '../src/lib/types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '../src/data');
@@ -119,20 +124,7 @@ interface CachedRepoDataFile {
   dataVersion: number;
 }
 
-const LLM_CONFIGS = [
-  { id: 'gpt-5.2-codex', knowledgeCutoff: '2025-08-31' },
-  { id: 'claude-4.5-opus', knowledgeCutoff: '2025-05-01' },
-  { id: 'gemini-3-pro', knowledgeCutoff: '2025-01-01' },
-];
-
-const WEIGHTS = {
-  coverage: 0.25,
-  adoption: 0.20,
-  documentation: 0.15,
-  aiReadiness: 0.15,
-  momentum: 0.15,
-  maintenance: 0.10,
-};
+// LLM_CONFIGS and WEIGHTS are now imported from shared modules
 
 function getHeaders() {
   const headers: Record<string, string> = {
@@ -350,6 +342,8 @@ function extractRepoUrl(repository: unknown): string | null {
   return null;
 }
 
+// Use shared scoring logic from src/lib/scoring.ts
+// This ensures consistency between batch processing and runtime API
 function calculateScores(
   repo: RepoInfo,
   releases: ReleaseInfo[],
@@ -358,169 +352,28 @@ function calculateScores(
   docSignals: DocSignals,
   activitySignals: ActivitySignals
 ): ScoresByLlm {
-  const scores: ScoresByLlm = {};
+  // Call the shared implementation
+  const sharedScores = calculateScoresShared(
+    repo as RepoInfoShared,
+    releases as ReleaseInfoShared[],
+    npmInfo as NpmPackageInfoShared | null,
+    hasLlmsTxt,
+    docSignals as DocSignalsShared,
+    activitySignals as ActivitySignalsShared
+  );
   
-  for (const llm of LLM_CONFIGS) {
-    // Coverage dimension
-    const cutoff = new Date(llm.knowledgeCutoff);
-    const latestRelease = releases.find(r => !r.isPrerelease);
-    const latestReleaseDate = latestRelease ? new Date(latestRelease.publishedAt) : null;
-    const lastPush = new Date(repo.pushedAt);
-    const createdAt = new Date(repo.createdAt);
-    
-    let releaseScore = 100;
-    if (latestReleaseDate) {
-      if (latestReleaseDate <= cutoff) {
-        releaseScore = 100;
-      } else {
-        const daysBeyond = Math.floor((latestReleaseDate.getTime() - cutoff.getTime()) / (1000 * 60 * 60 * 24));
-        releaseScore = Math.max(20, 100 - daysBeyond * 0.5);
-      }
-    }
-    
-    let activityScore = 100;
-    if (lastPush > cutoff) {
-      const daysBeyond = Math.floor((lastPush.getTime() - cutoff.getTime()) / (1000 * 60 * 60 * 24));
-      activityScore = Math.max(30, 100 - daysBeyond * 0.3);
-    }
-    
-    const maturityScore = createdAt < cutoff ? 100 : 50;
-    const coverageScore = releaseScore * 0.5 + activityScore * 0.3 + maturityScore * 0.2;
-    
-    // Adoption dimension
-    const starScore = Math.min(100, Math.log10(repo.stars + 1) * 20);
-    const forkScore = Math.min(100, Math.log10(repo.forks + 1) * 25);
-    let downloadScore = 50;
-    if (npmInfo && npmInfo.weeklyDownloads > 0) {
-      downloadScore = Math.min(100, Math.log10(npmInfo.weeklyDownloads + 1) * 14.3);
-    }
-    const adoptionScore = starScore * 0.4 + downloadScore * 0.4 + forkScore * 0.2;
-    
-    // Documentation dimension
-    let documentationScore = 0;
-    if (docSignals.readmeSize > 10000) documentationScore += 40;
-    else if (docSignals.readmeSize > 5000) documentationScore += 30;
-    else if (docSignals.readmeSize > 2000) documentationScore += 20;
-    else if (docSignals.readmeSize > 500) documentationScore += 10;
-    if (docSignals.hasDocsDir) documentationScore += 25;
-    if (docSignals.hasExamplesDir) documentationScore += 20;
-    if (docSignals.hasChangelog) documentationScore += 15;
-    documentationScore = Math.min(100, documentationScore);
-    
-    // AI Readiness dimension
-    let aiReadinessScore = 0;
-    const hasTypescript = repo.hasTypescript || repo.language === 'TypeScript';
-    const hasNpmTypes = npmInfo?.hasTypes === 'bundled' || npmInfo?.hasTypes === 'definitelyTyped';
-    if (hasTypescript || hasNpmTypes) aiReadinessScore += 40;
-    if (hasLlmsTxt) aiReadinessScore += 30;
-    if (repo.topics.length >= 3) aiReadinessScore += 15;
-    if (repo.license) aiReadinessScore += 15;
-    aiReadinessScore = Math.min(100, aiReadinessScore);
-    
-    // Momentum dimension
-    let momentumScore = 0;
-    if (activitySignals.commitFrequency > 10) momentumScore += 40;
-    else if (activitySignals.commitFrequency > 5) momentumScore += 30;
-    else if (activitySignals.commitFrequency > 2) momentumScore += 20;
-    else if (activitySignals.commitFrequency > 0.5) momentumScore += 10;
-    
-    if (activitySignals.avgDaysBetweenReleases > 0) {
-      if (activitySignals.avgDaysBetweenReleases < 30) momentumScore += 35;
-      else if (activitySignals.avgDaysBetweenReleases < 60) momentumScore += 25;
-      else if (activitySignals.avgDaysBetweenReleases < 120) momentumScore += 15;
-      else if (activitySignals.avgDaysBetweenReleases < 180) momentumScore += 5;
-    }
-    
-    if (activitySignals.recentCommitsCount >= 30) momentumScore += 25;
-    else if (activitySignals.recentCommitsCount >= 20) momentumScore += 20;
-    else if (activitySignals.recentCommitsCount >= 10) momentumScore += 15;
-    else if (activitySignals.recentCommitsCount >= 5) momentumScore += 10;
-    momentumScore = Math.min(100, momentumScore);
-    
-    // Maintenance dimension
-    const issueRatio = repo.openIssues / Math.max(1, repo.stars);
-    let maintenanceScore = 50;
-    if (issueRatio < 0.02) maintenanceScore += 30;
-    else if (issueRatio < 0.05) maintenanceScore += 20;
-    else if (issueRatio < 0.1) maintenanceScore += 10;
-    
-    if (activitySignals.avgPRCloseTimeHours > 0) {
-      if (activitySignals.avgPRCloseTimeHours < 24) maintenanceScore += 20;
-      else if (activitySignals.avgPRCloseTimeHours < 72) maintenanceScore += 15;
-      else if (activitySignals.avgPRCloseTimeHours < 168) maintenanceScore += 10;
-      else if (activitySignals.avgPRCloseTimeHours < 720) maintenanceScore += 5;
-    }
-    maintenanceScore = Math.min(100, maintenanceScore);
-    
-    const overall =
-      coverageScore * WEIGHTS.coverage +
-      adoptionScore * WEIGHTS.adoption +
-      documentationScore * WEIGHTS.documentation +
-      aiReadinessScore * WEIGHTS.aiReadiness +
-      momentumScore * WEIGHTS.momentum +
-      maintenanceScore * WEIGHTS.maintenance;
-    
-    const grade = overall >= 85 ? 'A' : overall >= 70 ? 'B' : overall >= 55 ? 'C' : overall >= 40 ? 'D' : 'F';
-    
-    scores[llm.id] = {
-      overall: Math.round(overall),
-      grade,
-      coverage: {
-        score: Math.round(coverageScore),
-        details: {
-          releaseScore: Math.round(releaseScore),
-          activityScore: Math.round(activityScore),
-          maturityScore: Math.round(maturityScore),
-          latestRelease: latestRelease?.tagName || 'N/A',
-          releaseCovered: latestReleaseDate ? latestReleaseDate <= cutoff : true,
-        },
-      },
-      adoption: {
-        score: Math.round(adoptionScore),
-        details: {
-          starScore: Math.round(starScore),
-          downloadScore: Math.round(downloadScore),
-          forkScore: Math.round(forkScore),
-          stars: repo.stars,
-          forks: repo.forks,
-          weeklyDownloads: npmInfo?.weeklyDownloads || 0,
-        },
-      },
-      documentation: {
-        score: Math.round(documentationScore),
-        details: {
-          readmeSize: docSignals.readmeSize,
-          hasDocsDir: docSignals.hasDocsDir,
-          hasExamplesDir: docSignals.hasExamplesDir,
-          hasChangelog: docSignals.hasChangelog,
-        },
-      },
-      aiReadiness: {
-        score: Math.round(aiReadinessScore),
-        details: {
-          hasTypescript: hasTypescript || hasNpmTypes,
-          hasLlmsTxt,
-          hasGoodTopics: repo.topics.length >= 3,
-          hasLicense: !!repo.license,
-        },
-      },
-      momentum: {
-        score: Math.round(momentumScore),
-        details: {
-          commitFrequency: Math.round(activitySignals.commitFrequency * 10) / 10,
-          avgDaysBetweenReleases: Math.round(activitySignals.avgDaysBetweenReleases),
-          recentCommitsCount: activitySignals.recentCommitsCount,
-        },
-      },
-      maintenance: {
-        score: Math.round(maintenanceScore),
-        details: {
-          openIssues: repo.openIssues,
-          issueRatio: Math.round(issueRatio * 1000) / 1000,
-          avgPRCloseTimeHours: Math.round(activitySignals.avgPRCloseTimeHours),
-          recentClosedPRsCount: activitySignals.recentClosedPRsCount,
-        },
-      },
+  // Convert to the format expected by this script
+  const scores: ScoresByLlm = {};
+  for (const [llmId, repoScore] of Object.entries(sharedScores)) {
+    scores[llmId] = {
+      overall: repoScore.overall,
+      grade: repoScore.grade,
+      coverage: repoScore.coverage,
+      adoption: repoScore.adoption,
+      documentation: repoScore.documentation,
+      aiReadiness: repoScore.aiReadiness,
+      momentum: repoScore.momentum,
+      maintenance: repoScore.maintenance,
     };
   }
   
