@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCachedRepo } from '../../lib/data-loader';
+import { captureException, type SentryEnv } from '../../lib/sentry';
+import type { CachedRepoData } from '../../lib/types';
 
 interface R2Object {
   json(): Promise<unknown>;
@@ -7,9 +9,10 @@ interface R2Object {
 
 interface R2Bucket {
   get(key: string): Promise<R2Object | null>;
+  put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<void>;
 }
 
-interface CloudflareEnv {
+interface CloudflareEnv extends SentryEnv {
   DATA_BUCKET?: R2Bucket;
 }
 
@@ -123,7 +126,7 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
       return badgeResponse('AI Era Stack', 'not found', '999999');
     }
     
-    const data = await response.json();
+    const data = (await response.json()) as CachedRepoData;
     
     if (data.scores && data.scores[llmId]) {
       const score = data.scores[llmId];
@@ -136,6 +139,12 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
     
     return badgeResponse('AI Era Stack', 'error', '999999');
   } catch (error) {
+    captureException(error, {
+      request,
+      tags: { route: 'badge' },
+      extra: { owner, repo, llmId },
+      waitUntil: locals?.runtime?.ctx?.waitUntil,
+    });
     console.error('Badge generation error:', error);
     return badgeResponse('AI Era Stack', 'error', '999999');
   }

@@ -15,13 +15,14 @@ import { fetchNpmPackage } from '../../lib/npm';
 import { calculateScores } from '../../lib/scoring';
 import type { CachedRepoData, CuratedRepo, DocSignals, ActivitySignals } from '../../lib/types';
 import { DATA_VERSION } from '../../lib/types';
+import { captureException, type SentryEnv } from '../../lib/sentry';
 
 interface R2Bucket {
   get(key: string): Promise<any>;
   put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<void>;
 }
 
-interface CloudflareEnv {
+interface CloudflareEnv extends SentryEnv {
   DATA_BUCKET?: R2Bucket;
   GITHUB_TOKEN?: string;
 }
@@ -117,7 +118,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       owner: repo.owner,
       name: repo.name,
       fullName: repo.fullName,
-      category: curatedMatch?.category || 'utility',
+      category: curatedMatch?.category || 'tooling-utilities',
       featured: curatedMatch?.featured || false,
       repo,
       releases,
@@ -146,6 +147,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
     return jsonResponse(cacheRecord);
   } catch (error) {
+    captureException(error, {
+      request,
+      tags: { route: 'api/repo' },
+      extra: { owner, name, cacheKey },
+      waitUntil: locals?.runtime?.ctx?.waitUntil,
+    });
     const message = error instanceof Error ? error.message : 'Failed to fetch repository data';
     return jsonResponse({ error: message }, 500);
   }

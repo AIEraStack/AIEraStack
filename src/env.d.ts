@@ -12,12 +12,27 @@ interface R2Bucket {
 interface CloudflareEnv {
   DATA_BUCKET?: R2Bucket;
   GITHUB_TOKEN?: string;
+  SENTRY_DSN?: string;
+  SENTRY_ENV?: string;
+  SENTRY_RELEASE?: string;
+  SENTRY_TRACES_SAMPLE_RATE?: string;
+}
+
+interface CloudflareRuntimeContext {
+  waitUntil: (promise: Promise<unknown>) => void;
+  passThroughOnException: () => void;
+  props: Record<string, unknown>;
+}
+
+interface CloudflareRuntime {
+  env?: CloudflareEnv;
+  cf?: Record<string, unknown>;
+  caches?: CacheStorage;
+  ctx?: CloudflareRuntimeContext;
 }
 
 declare namespace App {
   interface Locals {
-    runtime?: {
-      env?: CloudflareEnv;
-    };
+    runtime?: CloudflareRuntime;
   }
 }
