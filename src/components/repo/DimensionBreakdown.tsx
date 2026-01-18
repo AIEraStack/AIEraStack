@@ -61,8 +61,8 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
           color="#f59e0b"
           flags={[
             { label: 'README', value: (score.documentation.details.readmeSize as number) > 2000 },
-            { label: 'Docs Dir', value: score.documentation.details.hasDocsDir as boolean },
-            { label: 'Examples', value: score.documentation.details.hasExamplesDir as boolean },
+            { label: 'Docs', value: score.documentation.details.hasDocs as boolean },
+            { label: 'Examples', value: score.documentation.details.hasExamples as boolean },
             { label: 'Changelog', value: score.documentation.details.hasChangelog as boolean },
           ]}
         />
@@ -75,6 +75,8 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
           flags={[
             { label: 'TypeScript', value: score.aiReadiness.details.hasTypescript as boolean },
             { label: 'llms.txt', value: score.aiReadiness.details.hasLlmsTxt as boolean },
+            { label: 'Claude.md', value: score.aiReadiness.details.hasClaudeMd as boolean },
+            { label: 'Agent.md', value: score.aiReadiness.details.hasAgentMd as boolean },
             { label: 'Good Topics', value: score.aiReadiness.details.hasGoodTopics as boolean },
             { label: 'License', value: score.aiReadiness.details.hasLicense as boolean },
           ]}

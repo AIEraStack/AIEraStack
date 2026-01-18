@@ -161,17 +161,40 @@ export async function fetchRecentClosedPRs(owner: string, name: string, token?: 
   }));
 }
 
-export async function fetchReadmeSize(owner: string, name: string, token?: string): Promise<number> {
+export interface ReadmeInfo {
+  size: number;
+  content: string;
+}
+
+export async function fetchReadme(owner: string, name: string, token?: string): Promise<ReadmeInfo> {
   const response = await fetch(`${GITHUB_API}/repos/${owner}/${name}/readme`, {
     headers: getGithubHeaders(token),
   });
 
   if (!response.ok) {
-    return 0;
+    return { size: 0, content: '' };
   }
 
   const data = await response.json();
-  return data.size || 0;
+  const size = data.size || 0;
+  
+  // Decode base64 content
+  let content = '';
+  if (data.content && data.encoding === 'base64') {
+    try {
+      content = atob(data.content.replace(/\n/g, ''));
+    } catch {
+      content = '';
+    }
+  }
+  
+  return { size, content };
+}
+
+// Backward compatibility
+export async function fetchReadmeSize(owner: string, name: string, token?: string): Promise<number> {
+  const readme = await fetchReadme(owner, name, token);
+  return readme.size;
 }
 
 export async function fetchRootContents(owner: string, name: string, token?: string): Promise<string[]> {
@@ -190,4 +213,57 @@ export async function fetchRootContents(owner: string, name: string, token?: str
   }
 
   return data.map((item: any) => item.name.toLowerCase());
+}
+
+/**
+ * Parse README content for documentation and example links
+ * Looks for Markdown links and bare URLs pointing to docs/examples
+ */
+export function parseReadmeLinks(content: string): { hasDocsLink: boolean; hasExamplesLink: boolean } {
+  if (!content) {
+    return { hasDocsLink: false, hasExamplesLink: false };
+  }
+
+  const lowerContent = content.toLowerCase();
+  
+  // Keywords for documentation
+  const docsKeywords = ['documentation', 'docs', 'guide', 'tutorial', 'api', 'reference'];
+  // Keywords for examples
+  const examplesKeywords = ['example', 'examples', 'sample', 'samples', 'demo'];
+  
+  // Match Markdown links: [text](url)
+  const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Match bare URLs: http(s)://...
+  const urlRegex = /https?:\/\/[^\s<>'"]+/g;
+  
+  let hasDocsLink = false;
+  let hasExamplesLink = false;
+  
+  // Check Markdown links
+  let match;
+  while ((match = markdownLinkRegex.exec(content)) !== null) {
+    const linkText = match[1].toLowerCase();
+    const linkUrl = match[2].toLowerCase();
+    const combined = linkText + ' ' + linkUrl;
+    
+    if (!hasDocsLink && docsKeywords.some(kw => combined.includes(kw))) {
+      hasDocsLink = true;
+    }
+    if (!hasExamplesLink && examplesKeywords.some(kw => combined.includes(kw))) {
+      hasExamplesLink = true;
+    }
+  }
+  
+  // Check bare URLs in context (look at surrounding text)
+  const lines = lowerContent.split('\n');
+  for (const line of lines) {
+    if (!hasDocsLink && docsKeywords.some(kw => line.includes(kw)) && urlRegex.test(line)) {
+      hasDocsLink = true;
+    }
+    if (!hasExamplesLink && examplesKeywords.some(kw => line.includes(kw)) && urlRegex.test(line)) {
+      hasExamplesLink = true;
+    }
+  }
+  
+  return { hasDocsLink, hasExamplesLink };
 }

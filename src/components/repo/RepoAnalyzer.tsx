@@ -100,7 +100,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
     return <ErrorStateComponent message="No data available" />;
   }
 
-  const { repo, scores, releases, npmInfo, hasLlmsTxt, sources } = data;
+  const { repo, scores, releases, npmInfo, hasLlmsTxt, hasClaudeMd, hasAgentMd, sources } = data;
   const bestLLMId = getBestLLM(scores);
   const bestLLM = getLLMById(bestLLMId);
   const selectedScore = scores[selectedLLMId];
@@ -230,6 +230,18 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
               positive={hasLlmsTxt}
               label={hasLlmsTxt ? 'Project provides llms.txt for optimized AI context' : 'No llms.txt found (standard context only)'}
             />
+            {hasClaudeMd && (
+              <InsightItem
+                positive={true}
+                label="Project includes Claude.md for AI assistant guidance"
+              />
+            )}
+            {hasAgentMd && (
+              <InsightItem
+                positive={true}
+                label="Project includes Agent.md for AI agent configuration"
+              />
+            )}
           </div>
         </div>
       )}

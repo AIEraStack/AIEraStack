@@ -83,12 +83,14 @@ export function calculateScores(
   npmInfo: NpmPackageInfo | null,
   hasLlmsTxt: boolean,
   docSignals: DocSignals,
-  activitySignals: ActivitySignals
+  activitySignals: ActivitySignals,
+  hasClaudeMd = false,
+  hasAgentMd = false
 ): AllLLMScores {
   const scores: AllLLMScores = {};
 
   for (const llm of LLM_CONFIGS) {
-    scores[llm.id] = calculateScoreForLLM(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals, llm);
+    scores[llm.id] = calculateScoreForLLM(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals, llm, hasClaudeMd, hasAgentMd);
   }
 
   return scores;
@@ -101,12 +103,14 @@ function calculateScoreForLLM(
   hasLlmsTxt: boolean,
   docSignals: DocSignals,
   activitySignals: ActivitySignals,
-  llm: LLMConfig
+  llm: LLMConfig,
+  hasClaudeMd = false,
+  hasAgentMd = false
 ): RepoScore {
   const coverage = calculateCoverage(repo, releases, llm);
   const adoption = calculateAdoption(repo, npmInfo);
   const documentation = calculateDocumentation(docSignals);
-  const aiReadiness = calculateAIReadiness(repo, npmInfo, hasLlmsTxt);
+  const aiReadiness = calculateAIReadiness(repo, npmInfo, hasLlmsTxt, hasClaudeMd, hasAgentMd);
   const momentum = calculateMomentum(activitySignals, releases);
   const maintenance = calculateMaintenance(repo, activitySignals);
 
@@ -216,13 +220,15 @@ function calculateDocumentation(docSignals: DocSignals): DimensionScore {
     score += 10;
   }
 
-  // Docs directory (25 points)
-  if (docSignals.hasDocsDir) {
+  // Docs directory OR README docs link (25 points)
+  const hasDocs = docSignals.hasDocsDir || docSignals.hasDocsLink;
+  if (hasDocs) {
     score += 25;
   }
 
-  // Examples directory (20 points)
-  if (docSignals.hasExamplesDir) {
+  // Examples directory OR README examples link (20 points)
+  const hasExamples = docSignals.hasExamplesDir || docSignals.hasExamplesLink;
+  if (hasExamples) {
     score += 20;
   }
 
@@ -236,7 +242,11 @@ function calculateDocumentation(docSignals: DocSignals): DimensionScore {
     details: {
       readmeSize: docSignals.readmeSize,
       hasDocsDir: docSignals.hasDocsDir,
+      hasDocsLink: docSignals.hasDocsLink,
+      hasDocs,
       hasExamplesDir: docSignals.hasExamplesDir,
+      hasExamplesLink: docSignals.hasExamplesLink,
+      hasExamples,
       hasChangelog: docSignals.hasChangelog,
     },
   };
@@ -246,7 +256,9 @@ function calculateDocumentation(docSignals: DocSignals): DimensionScore {
 function calculateAIReadiness(
   repo: RepoInfo,
   npmInfo: NpmPackageInfo | null,
-  hasLlmsTxt: boolean
+  hasLlmsTxt: boolean,
+  hasClaudeMd = false,
+  hasAgentMd = false
 ): DimensionScore {
   let score = 0;
 
@@ -259,6 +271,14 @@ function calculateAIReadiness(
 
   if (hasLlmsTxt) {
     score += 30;
+  }
+
+  // Claude.md and Agent.md small bonus (10 points each)
+  if (hasClaudeMd) {
+    score += 10;
+  }
+  if (hasAgentMd) {
+    score += 10;
   }
 
   const hasGoodTopics = repo.topics.length >= 3;
@@ -276,6 +296,8 @@ function calculateAIReadiness(
     details: {
       hasTypescript: hasTypescript || hasNpmTypes,
       hasLlmsTxt,
+      hasClaudeMd,
+      hasAgentMd,
       hasGoodTopics,
       hasLicense,
     },

@@ -62,6 +62,8 @@ interface DocSignals {
   hasDocsDir: boolean;
   hasExamplesDir: boolean;
   hasChangelog: boolean;
+  hasDocsLink: boolean;
+  hasExamplesLink: boolean;
 }
 
 interface ActivitySignals {
@@ -105,6 +107,8 @@ interface CachedRepoDataFile {
   repo: RepoInfo;
   releases: ReleaseInfo[];
   hasLlmsTxt: boolean;
+  hasClaudeMd: boolean;
+  hasAgentMd: boolean;
   npmPackage: string | null;
   npmInfo: NpmPackageInfo | null;
   docSignals: DocSignals;
@@ -213,15 +217,86 @@ async function checkLlmsTxt(owner: string, name: string): Promise<boolean> {
   return false;
 }
 
-async function fetchReadmeSize(owner: string, name: string): Promise<number> {
+interface ReadmeInfo {
+  size: number;
+  content: string;
+}
+
+async function fetchReadme(owner: string, name: string): Promise<ReadmeInfo> {
   try {
     const response = await fetchWithRetry(`${GITHUB_API}/repos/${owner}/${name}/readme`, getHeaders());
-    if (!response.ok) return 0;
+    if (!response.ok) return { size: 0, content: '' };
     const data = await response.json();
-    return data.size || 0;
+    const size = data.size || 0;
+    
+    // Decode base64 content
+    let content = '';
+    if (data.content && data.encoding === 'base64') {
+      try {
+        content = Buffer.from(data.content, 'base64').toString('utf-8');
+      } catch {
+        content = '';
+      }
+    }
+    
+    return { size, content };
   } catch {
-    return 0;
+    return { size: 0, content: '' };
   }
+}
+
+async function fetchReadmeSize(owner: string, name: string): Promise<number> {
+  const readme = await fetchReadme(owner, name);
+  return readme.size;
+}
+
+function parseReadmeLinks(content: string): { hasDocsLink: boolean; hasExamplesLink: boolean } {
+  if (!content) {
+    return { hasDocsLink: false, hasExamplesLink: false };
+  }
+
+  const lowerContent = content.toLowerCase();
+  
+  // Keywords for documentation
+  const docsKeywords = ['documentation', 'docs', 'guide', 'tutorial', 'api', 'reference'];
+  // Keywords for examples
+  const examplesKeywords = ['example', 'examples', 'sample', 'samples', 'demo'];
+  
+  // Match Markdown links: [text](url)
+  const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  // Match bare URLs: http(s)://...
+  const urlRegex = /https?:\/\/[^\s<>'"]+/g;
+  
+  let hasDocsLink = false;
+  let hasExamplesLink = false;
+  
+  // Check Markdown links
+  let match;
+  while ((match = markdownLinkRegex.exec(content)) !== null) {
+    const linkText = match[1].toLowerCase();
+    const linkUrl = match[2].toLowerCase();
+    const combined = linkText + ' ' + linkUrl;
+    
+    if (!hasDocsLink && docsKeywords.some(kw => combined.includes(kw))) {
+      hasDocsLink = true;
+    }
+    if (!hasExamplesLink && examplesKeywords.some(kw => combined.includes(kw))) {
+      hasExamplesLink = true;
+    }
+  }
+  
+  // Check bare URLs in context (look at surrounding text)
+  const lines = lowerContent.split('\n');
+  for (const line of lines) {
+    if (!hasDocsLink && docsKeywords.some(kw => line.includes(kw)) && urlRegex.test(line)) {
+      hasDocsLink = true;
+    }
+    if (!hasExamplesLink && examplesKeywords.some(kw => line.includes(kw)) && urlRegex.test(line)) {
+      hasExamplesLink = true;
+    }
+  }
+  
+  return { hasDocsLink, hasExamplesLink };
 }
 
 async function fetchRootContents(owner: string, name: string): Promise<string[]> {
@@ -364,7 +439,9 @@ function calculateScores(
   npmInfo: NpmPackageInfo | null,
   hasLlmsTxt: boolean,
   docSignals: DocSignals,
-  activitySignals: ActivitySignals
+  activitySignals: ActivitySignals,
+  hasClaudeMd = false,
+  hasAgentMd = false
 ): ScoresByLlm {
   const scores: ScoresByLlm = {};
   
@@ -419,8 +496,12 @@ function calculateScores(
     else if (docSignals.readmeSize > 5000) documentationScore += 30;
     else if (docSignals.readmeSize > 2000) documentationScore += 20;
     else if (docSignals.readmeSize > 500) documentationScore += 10;
-    if (docSignals.hasDocsDir) documentationScore += 25;
-    if (docSignals.hasExamplesDir) documentationScore += 20;
+    // Docs directory OR README docs link
+    const hasDocs = docSignals.hasDocsDir || docSignals.hasDocsLink;
+    if (hasDocs) documentationScore += 25;
+    // Examples directory OR README examples link
+    const hasExamples = docSignals.hasExamplesDir || docSignals.hasExamplesLink;
+    if (hasExamples) documentationScore += 20;
     if (docSignals.hasChangelog) documentationScore += 15;
     documentationScore = Math.min(100, documentationScore);
     
@@ -430,6 +511,9 @@ function calculateScores(
     const hasNpmTypes = npmInfo?.hasTypes === 'bundled' || npmInfo?.hasTypes === 'definitelyTyped';
     if (hasTypescript || hasNpmTypes) aiReadinessScore += 40;
     if (hasLlmsTxt) aiReadinessScore += 30;
+    // Claude.md and Agent.md small bonus
+    if (hasClaudeMd) aiReadinessScore += 10;
+    if (hasAgentMd) aiReadinessScore += 10;
     if (repo.topics.length >= 3) aiReadinessScore += 15;
     if (repo.license) aiReadinessScore += 15;
     aiReadinessScore = Math.min(100, aiReadinessScore);
@@ -508,7 +592,11 @@ function calculateScores(
         details: {
           readmeSize: docSignals.readmeSize,
           hasDocsDir: docSignals.hasDocsDir,
+          hasDocsLink: docSignals.hasDocsLink,
+          hasDocs,
           hasExamplesDir: docSignals.hasExamplesDir,
+          hasExamplesLink: docSignals.hasExamplesLink,
+          hasExamples,
           hasChangelog: docSignals.hasChangelog,
         },
       },
@@ -517,6 +605,8 @@ function calculateScores(
         details: {
           hasTypescript: hasTypescript || hasNpmTypes,
           hasLlmsTxt,
+          hasClaudeMd,
+          hasAgentMd,
           hasGoodTopics: repo.topics.length >= 3,
           hasLicense: !!repo.license,
         },
@@ -691,11 +781,11 @@ async function main() {
     console.log(`[${i + 1}/${curatedRepos.length}] Fetching ${key}...`);
     
     try {
-      const [repo, releases, hasLlmsTxt, readmeSize, rootContents, recentCommits, recentClosedPRs] = await Promise.all([
+      const [repo, releases, hasLlmsTxt, readme, rootContents, recentCommits, recentClosedPRs] = await Promise.all([
         fetchRepoInfo(curated.owner, curated.name),
         fetchReleases(curated.owner, curated.name),
         checkLlmsTxt(curated.owner, curated.name),
-        fetchReadmeSize(curated.owner, curated.name),
+        fetchReadme(curated.owner, curated.name),
         fetchRootContents(curated.owner, curated.name),
         fetchRecentCommits(curated.owner, curated.name),
         fetchRecentClosedPRs(curated.owner, curated.name),
@@ -706,11 +796,20 @@ async function main() {
         npmInfo = await fetchNpmPackage(curated.npmPackage);
       }
       
+      // Parse README for doc/example links
+      const readmeLinks = parseReadmeLinks(readme.content);
+      
+      // Check for Claude.md and Agent.md in root
+      const hasClaudeMd = rootContents.some(name => name === 'claude.md');
+      const hasAgentMd = rootContents.some(name => name === 'agent.md' || name === 'agents.md');
+      
       const docSignals: DocSignals = {
-        readmeSize,
+        readmeSize: readme.size,
         hasDocsDir: rootContents.some(name => name === 'docs' || name === 'documentation'),
         hasExamplesDir: rootContents.some(name => name === 'examples' || name === 'example'),
         hasChangelog: rootContents.some(name => name.includes('changelog') || name.includes('history')),
+        hasDocsLink: readmeLinks.hasDocsLink,
+        hasExamplesLink: readmeLinks.hasExamplesLink,
       };
 
       const activitySignals: ActivitySignals = {
@@ -721,7 +820,7 @@ async function main() {
         avgPRCloseTimeHours: calculateAvgPRCloseTime(recentClosedPRs),
       };
       
-      const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals);
+      const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals, hasClaudeMd, hasAgentMd);
       
       const fetchedAt = new Date().toISOString();
       const repoData: CachedRepoDataFile = {
@@ -734,6 +833,8 @@ async function main() {
         repo,
         releases,
         hasLlmsTxt,
+        hasClaudeMd,
+        hasAgentMd,
         
         npmPackage: curated.npmPackage || null,
         npmInfo,

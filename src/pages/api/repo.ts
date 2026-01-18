@@ -7,8 +7,9 @@ import {
   fetchRepoInfo, 
   fetchRecentCommits, 
   fetchRecentClosedPRs, 
-  fetchReadmeSize, 
-  fetchRootContents 
+  fetchReadme, 
+  fetchRootContents,
+  parseReadmeLinks
 } from '../../lib/github';
 import { fetchNpmPackage } from '../../lib/npm';
 import { calculateScores } from '../../lib/scoring';
@@ -71,11 +72,11 @@ export const GET: APIRoute = async ({ request, locals }) => {
 
   // Fetch fresh data
   try {
-    const [repo, releases, hasLlmsTxt, readmeSize, rootContents, recentCommits, recentClosedPRs] = await Promise.all([
+    const [repo, releases, hasLlmsTxt, readme, rootContents, recentCommits, recentClosedPRs] = await Promise.all([
       fetchRepoInfo(owner, name, env.GITHUB_TOKEN),
       fetchReleases(owner, name, env.GITHUB_TOKEN),
       checkLlmsTxt(owner, name, env.GITHUB_TOKEN),
-      fetchReadmeSize(owner, name, env.GITHUB_TOKEN),
+      fetchReadme(owner, name, env.GITHUB_TOKEN),
       fetchRootContents(owner, name, env.GITHUB_TOKEN),
       fetchRecentCommits(owner, name, env.GITHUB_TOKEN),
       fetchRecentClosedPRs(owner, name, env.GITHUB_TOKEN),
@@ -84,12 +85,21 @@ export const GET: APIRoute = async ({ request, locals }) => {
     const npmPackageName = curatedMatch?.npmPackage || repo.name.toLowerCase();
     const npmInfo = await fetchNpmPackage(npmPackageName);
 
+    // Parse README for doc/example links
+    const readmeLinks = parseReadmeLinks(readme.content);
+
+    // Check for Claude.md and Agent.md in root
+    const hasClaudeMd = rootContents.some(name => name === 'claude.md');
+    const hasAgentMd = rootContents.some(name => name === 'agent.md' || name === 'agents.md');
+
     // Build doc signals
     const docSignals: DocSignals = {
-      readmeSize,
+      readmeSize: readme.size,
       hasDocsDir: rootContents.some(name => name === 'docs' || name === 'documentation'),
       hasExamplesDir: rootContents.some(name => name === 'examples' || name === 'example'),
       hasChangelog: rootContents.some(name => name.includes('changelog') || name.includes('history')),
+      hasDocsLink: readmeLinks.hasDocsLink,
+      hasExamplesLink: readmeLinks.hasExamplesLink,
     };
 
     // Build activity signals
@@ -101,7 +111,7 @@ export const GET: APIRoute = async ({ request, locals }) => {
       avgPRCloseTimeHours: calculateAvgPRCloseTime(recentClosedPRs),
     };
 
-    const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals);
+    const scores = calculateScores(repo, releases, npmInfo, hasLlmsTxt, docSignals, activitySignals, hasClaudeMd, hasAgentMd);
 
     const cacheRecord: CachedRepoData = {
       owner: repo.owner,
@@ -112,6 +122,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
       repo,
       releases,
       hasLlmsTxt,
+      hasClaudeMd,
+      hasAgentMd,
       npmPackage: npmInfo ? npmPackageName : null,
       npmInfo,
       docSignals,

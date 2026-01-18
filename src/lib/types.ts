@@ -280,6 +280,8 @@ export interface DocSignals {
   hasDocsDir: boolean;
   hasExamplesDir: boolean;
   hasChangelog: boolean;
+  hasDocsLink: boolean;
+  hasExamplesLink: boolean;
 }
 
 export interface ActivitySignals {
@@ -288,6 +290,12 @@ export interface ActivitySignals {
   avgDaysBetweenReleases: number; // Based on recent releases
   recentClosedPRsCount: number; // Last 30 closed PRs
   avgPRCloseTimeHours: number; // Average time to close/merge PRs (hours)
+}
+
+export interface AIReadinessSignals {
+  hasLlmsTxt: boolean;
+  hasClaudeMd: boolean;
+  hasAgentMd: boolean;
 }
 
 export interface CachedRepoData {
@@ -300,6 +308,8 @@ export interface CachedRepoData {
   repo: RepoInfo;
   releases: ReleaseInfo[];
   hasLlmsTxt: boolean;
+  hasClaudeMd: boolean;
+  hasAgentMd: boolean;
 
   npmPackage: string | null;
   npmInfo: NpmPackageInfo | null;
