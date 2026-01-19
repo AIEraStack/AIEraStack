@@ -8,7 +8,7 @@ interface DimensionBreakdownProps {
 
 export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) {
   // Guard against undefined score - don't check languageAI as it may not exist in cached data
-  if (!score || !score.coverage || !score.aiReadiness || !score.documentation || !score.adoption || !score.momentum || !score.maintenance) {
+  if (!score || !score.coverage || !score.aiReadiness || !score.documentation || !score.modelCapability || !score.adoption || !score.momentum || !score.maintenance) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
         <h2 className="text-lg font-semibold mb-4 text-white">
@@ -35,7 +35,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         <DimensionRadar score={score} languageAI={languageAI} />
       </div>
 
-      <div className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-4">
         <DimensionSection
           name="Coverage"
           weight="25%"
@@ -75,7 +75,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
 
         <DimensionSection
           name="Documentation"
-          weight="15%"
+          weight="10%"
           score={score.documentation.score}
           color="#f59e0b"
           flags={[
@@ -87,42 +87,27 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         />
 
         <DimensionSection
-          name="Adoption"
+          name="Model Capability"
           weight="10%"
+          score={score.modelCapability.score}
+          color="#8b5cf6"
+          details={[
+            { label: 'SWE-bench Verified', value: score.modelCapability.details.sweVerified as number },
+            { label: 'HumanEval', value: score.modelCapability.details.humanEval as number },
+            { label: 'Debugging', value: score.modelCapability.details.debugging as number },
+            { label: 'Code Generation', value: score.modelCapability.details.codeGeneration as number },
+          ]}
+        />
+
+        <DimensionSection
+          name="Adoption"
+          weight="5%"
           score={score.adoption.score}
           color="#10b981"
           details={[
             { label: 'GitHub Stars', value: score.adoption.details.starScore as number, raw: formatNumber(score.adoption.details.stars as number) },
             { label: 'npm Downloads', value: score.adoption.details.downloadScore as number, raw: formatNumber(score.adoption.details.weeklyDownloads as number) + '/wk' },
             { label: 'Forks', value: score.adoption.details.forkScore as number, raw: formatNumber(score.adoption.details.forks as number) },
-          ]}
-        />
-
-        <DimensionSection
-          name="Documentation"
-          weight="15%"
-          score={score.documentation.score}
-          color="#f59e0b"
-          flags={[
-            { label: 'README', value: (score.documentation.details.readmeSize as number) > 2000 },
-            { label: 'Docs', value: score.documentation.details.hasDocs as boolean },
-            { label: 'Examples', value: score.documentation.details.hasExamples as boolean },
-            { label: 'Changelog', value: score.documentation.details.hasChangelog as boolean },
-          ]}
-        />
-
-        <DimensionSection
-          name="AI Readiness"
-          weight="15%"
-          score={score.aiReadiness.score}
-          color="#a855f7"
-          flags={[
-            { label: 'TypeScript', value: score.aiReadiness.details.hasTypescript as boolean },
-            { label: 'llms.txt', value: score.aiReadiness.details.hasLlmsTxt as boolean },
-            { label: 'Claude.md', value: score.aiReadiness.details.hasClaudeMd as boolean },
-            { label: 'Agent.md', value: score.aiReadiness.details.hasAgentMd as boolean },
-            { label: 'Good Topics', value: score.aiReadiness.details.hasGoodTopics as boolean },
-            { label: 'License', value: score.aiReadiness.details.hasLicense as boolean },
           ]}
         />
 
@@ -159,14 +144,21 @@ function DimensionRadar({ score, languageAI }: { score: RepoScore; languageAI: {
   const labelRadius = 105;
   const levels = [0.25, 0.5, 0.75, 1];
 
+  // Provide default modelCapability for backwards compatibility with cached data
+  const modelCapability = score.modelCapability || {
+    score: 85,
+    details: { sweVerified: 80, humanEval: 90, debugging: 85, codeGeneration: 85 },
+  };
+
   const axes = [
     { label: 'Coverage', value: score.coverage.score, angle: -90 },
-    { label: 'Language AI', value: languageAI.score, angle: -38.6 },
-    { label: 'AI Readiness', value: score.aiReadiness.score, angle: 12.8 },
-    { label: 'Documentation', value: score.documentation.score, angle: 64.3 },
-    { label: 'Adoption', value: score.adoption.score, angle: 115.7 },
-    { label: 'Momentum', value: score.momentum.score, angle: 167.1 },
-    { label: 'Maintenance', value: score.maintenance.score, angle: 218.6 },
+    { label: 'Lang AI', value: languageAI.score, angle: -45 },
+    { label: 'AI Ready', value: score.aiReadiness.score, angle: 0 },
+    { label: 'Docs', value: score.documentation.score, angle: 45 },
+    { label: 'Model Cap', value: modelCapability.score, angle: 90 },
+    { label: 'Adoption', value: score.adoption.score, angle: 135 },
+    { label: 'Momentum', value: score.momentum.score, angle: 180 },
+    { label: 'Maintain', value: score.maintenance.score, angle: 225 },
   ];
 
   const toPoint = (angleDeg: number, radius: number) => {
@@ -285,36 +277,36 @@ interface DimensionSectionProps {
 
 function DimensionSection({ name, weight, score, color, details, flags }: DimensionSectionProps) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium text-white">{name}</span>
+    <div className="bg-slate-800/30 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-medium text-white text-sm">{name}</span>
         <span className="text-xs text-slate-400">{weight}</span>
       </div>
       <ScoreBar label="" score={score} color={color} />
 
       {details && (
-        <div className="mt-2 pl-4 space-y-1">
+        <div className="mt-2 space-y-0.5">
           {details.map((d) => (
-            <div key={d.label} className="flex items-center gap-2 text-sm">
-              <span className="text-slate-400 w-32">{d.label}</span>
-              <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div key={d.label} className="flex items-center gap-1.5 text-xs">
+              <span className="text-slate-400 w-24 truncate">{d.label}</span>
+              <div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full"
                   style={{ width: `${d.value}%`, backgroundColor: color, opacity: 0.6 }}
                 />
               </div>
-              <span className="text-slate-400 text-xs w-16 text-right">{d.raw || d.value}</span>
+              <span className="text-slate-400 text-xs w-14 text-right">{d.raw || d.value}</span>
             </div>
           ))}
         </div>
       )}
 
       {flags && (
-        <div className="mt-2 pl-4 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-1">
           {flags.map((f) => (
             <span
               key={f.label}
-              className={`text-xs px-2 py-1 rounded-full ${f.value
+              className={`text-xs px-1.5 py-0.5 rounded-full ${f.value
                 ? 'bg-green-500/20 text-green-400'
                 : 'bg-slate-700 text-slate-500'
                 }`}

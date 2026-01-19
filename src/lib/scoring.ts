@@ -61,6 +61,7 @@ export interface RepoScore {
   languageAI: DimensionScore;
   aiReadiness: DimensionScore;
   documentation: DimensionScore;
+  modelCapability: DimensionScore;  // NEW: LLM coding capability
   adoption: DimensionScore;
   momentum: DimensionScore;
   maintenance: DimensionScore;
@@ -71,15 +72,16 @@ export interface AllLLMScores {
 }
 
 const WEIGHTS = {
-  coverage: 0.25,      // LLM training coverage - highest weight
-  languageAI: 0.20,    // Language AI friendliness (NEW)
-  aiReadiness: 0.20,   // TypeScript/llms.txt - increased
-  documentation: 0.15, // README/docs quality - affects RAG
-  adoption: 0.10,      // Stars/downloads - reduced weight
-  momentum: 0.05,      // Recent activity/releases - reduced
-  maintenance: 0.05,   // PR/issue health - reduced
+  coverage: 0.25,         // LLM training coverage - highest weight
+  languageAI: 0.20,       // Language AI friendliness
+  aiReadiness: 0.20,      // TypeScript/llms.txt
+  documentation: 0.10,    // README/docs quality (reduced from 15%)
+  modelCapability: 0.10,  // NEW: LLM coding capability
+  adoption: 0.05,         // Stars/downloads (reduced from 10%)
+  momentum: 0.05,         // Recent activity/releases
+  maintenance: 0.05,      // PR/issue health
 };
-// AI-related dimensions total: ~65% (coverage + languageAI + aiReadiness + documentation/RAG)
+// AI-related dimensions total: ~75% (coverage + languageAI + aiReadiness + modelCapability)
 
 export function calculateScores(
   repo: RepoInfo,
@@ -115,6 +117,7 @@ function calculateScoreForLLM(
   const languageAI = calculateLanguageAI(repo);
   const aiReadiness = calculateAIReadiness(repo, npmInfo, hasLlmsTxt, hasClaudeMd, hasAgentMd);
   const documentation = calculateDocumentation(docSignals);
+  const modelCapability = calculateModelCapability(llm);
   const adoption = calculateAdoption(repo, npmInfo);
   const momentum = calculateMomentum(activitySignals, releases);
   const maintenance = calculateMaintenance(repo, activitySignals);
@@ -124,6 +127,7 @@ function calculateScoreForLLM(
     languageAI.score * WEIGHTS.languageAI +
     aiReadiness.score * WEIGHTS.aiReadiness +
     documentation.score * WEIGHTS.documentation +
+    modelCapability.score * WEIGHTS.modelCapability +
     adoption.score * WEIGHTS.adoption +
     momentum.score * WEIGHTS.momentum +
     maintenance.score * WEIGHTS.maintenance;
@@ -135,9 +139,33 @@ function calculateScoreForLLM(
     languageAI,
     aiReadiness,
     documentation,
+    modelCapability,
     adoption,
     momentum,
     maintenance,
+  };
+}
+
+// Model Capability: How capable is this LLM at coding tasks?
+function calculateModelCapability(llm: LLMConfig): DimensionScore {
+  const { benchmarks } = llm;
+
+  // Weighted average of benchmark scores
+  const score = Math.round(
+    benchmarks.sweVerified * 0.4 +
+    benchmarks.humanEval * 0.3 +
+    benchmarks.debugging * 0.2 +
+    benchmarks.codeGeneration * 0.1
+  );
+
+  return {
+    score,
+    details: {
+      sweVerified: benchmarks.sweVerified,
+      humanEval: benchmarks.humanEval,
+      debugging: benchmarks.debugging,
+      codeGeneration: benchmarks.codeGeneration,
+    },
   };
 }
 

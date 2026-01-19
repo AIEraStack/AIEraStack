@@ -18,7 +18,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
   const [state, setState] = useState<LoadingState>(initialData ? 'success' : 'loading');
   const [error, setError] = useState<string>('');
   const [data, setData] = useState<CachedRepoData | null>(initialData);
-  
+
   // Ensure selectedLLMId is valid, fallback to best LLM if not found in scores
   const getInitialLLMId = () => {
     if (!initialData?.scores || Object.keys(initialData.scores).length === 0) {
@@ -35,7 +35,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
     // Fallback to first available LLM
     return Object.keys(initialData.scores)[0] || defaultLLMId;
   };
-  
+
   const [selectedLLMId, setSelectedLLMId] = useState<string>(getInitialLLMId());
 
   // Ensure selectedLLMId is always valid when data changes
@@ -64,7 +64,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
 
       try {
         const response = await fetch(`/api/repo?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}`);
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Failed to fetch: ${response.status}`);
@@ -72,12 +72,12 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
 
         const repoData: CachedRepoData = await response.json();
         setData(repoData);
-        
+
         // Update selectedLLMId if current one is not in new scores
         if (repoData.scores && !repoData.scores[selectedLLMId]) {
           setSelectedLLMId(getBestLLM(repoData.scores));
         }
-        
+
         setState('success');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load repository data');
@@ -109,7 +109,7 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
     <div className="animate-fade-in">
       <header className="mb-10 relative">
         <div className="absolute top-0 right-0 -z-10 w-64 h-64 bg-cyan-500/10 blur-[100px] rounded-full"></div>
-        
+
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -120,20 +120,20 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">TS</span>
               )}
             </div>
-           
+
             <p className="text-lg text-[var(--text-muted)] max-w-2xl">{repo.description}</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
-             <a 
-               href={sources.github}
-               target="_blank"
-               rel="noopener noreferrer"
-               className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium transition-colors flex items-center gap-2"
-             >
-               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
-               View on GitHub
-             </a>
+            <a
+              href={sources.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium transition-colors flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+              View on GitHub
+            </a>
           </div>
         </div>
 
@@ -153,38 +153,38 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
       {bestLLM && selectedScore && (
         <div className="relative glass-card rounded-2xl p-8 mb-10 overflow-hidden border-cyan-500/30">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600"></div>
-          
+
           <div className="flex flex-col md:flex-row gap-8 items-center">
-             <div className="flex-1">
-               <div className="flex items-center gap-3 mb-4">
-                 <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500">🏆</span>
-                 <h2 className="text-xl font-bold text-white">
-                   Recommended: <span className="text-cyan-400">{bestLLM.name}</span>
-                 </h2>
-               </div>
-               <p className="text-lg text-[var(--text-primary)] leading-relaxed">
-                 {generateInsight(selectedScore, bestLLM.name)}
-               </p>
-             </div>
-             
-             <div className="flex-shrink-0 text-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[140px]">
-               <div className="text-5xl font-bold mb-1 gradient-text">{selectedScore.overall}</div>
-               <div className={`text-sm font-bold uppercase tracking-wider`} style={{ color: getGradeColor(selectedScore.grade) }}>
-                 Grade {selectedScore.grade}
-               </div>
-             </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-500/20 text-yellow-500">🏆</span>
+                <h2 className="text-xl font-bold text-white">
+                  Recommended: <span className="text-cyan-400">{bestLLM.name}</span>
+                </h2>
+              </div>
+              <p className="text-lg text-[var(--text-primary)] leading-relaxed">
+                {generateInsight(selectedScore, bestLLM.name)}
+              </p>
+            </div>
+
+            <div className="flex-shrink-0 text-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[140px]">
+              <div className="text-5xl font-bold mb-1 gradient-text">{selectedScore.overall}</div>
+              <div className={`text-sm font-bold uppercase tracking-wider`} style={{ color: getGradeColor(selectedScore.grade) }}>
+                Grade {selectedScore.grade}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div className="glass-card rounded-2xl p-6">
-           <LLMComparison 
-             scores={scores} 
-             bestLLMId={bestLLMId}
-             selectedLLMId={selectedLLMId}
-             onSelectLLM={setSelectedLLMId}
-           />
+      <div className="grid lg:grid-cols-[380px_1fr] gap-8 items-start">
+        <div className="glass-card rounded-2xl p-6 lg:sticky lg:top-24">
+          <LLMComparison
+            scores={scores}
+            bestLLMId={bestLLMId}
+            selectedLLMId={selectedLLMId}
+            onSelectLLM={setSelectedLLMId}
+          />
         </div>
 
         {selectedScore && (
@@ -210,8 +210,8 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
                 selectedScore.coverage?.details?.latestRelease === 'N/A'
                   ? 'No stable major release (x.0.0) found'
                   : selectedScore.coverage?.details?.releaseCovered
-                  ? `Latest stable major release (${selectedScore.coverage.details.latestRelease}) is within LLM training data`
-                  : `Latest stable major release (${selectedScore.coverage?.details?.latestRelease}) is newer than LLM knowledge cutoff`
+                    ? `Latest stable major release (${selectedScore.coverage.details.latestRelease}) is within LLM training data`
+                    : `Latest stable major release (${selectedScore.coverage?.details?.latestRelease}) is newer than LLM knowledge cutoff`
               }
             />
             <InsightItem
