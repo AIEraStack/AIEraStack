@@ -5,12 +5,14 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  noDefaultJsonLd?: boolean;
 }
 
 const { 
   title, 
   description = 'Find the best libraries for AI-assisted coding with Cursor, Codex, and Claude. Compare how well LLMs understand your tech stack.',
-  ogImage = 'https://aierastack.com/og-image.jpg'
+  ogImage = 'https://aierastack.com/og-image.jpg',
+  noDefaultJsonLd = false
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
@@ -47,18 +49,20 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://aierastack.com');
     <meta name="msvalidate.01" content="24A74705E7E59BAB0E9C4BE5CDEE7E14" />
     <link rel="canonical" href={canonicalURL} />
     <title>{title}</title>
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "AI Era Stack",
-      "url": "https://aierastack.com",
-      "description": "Find the best libraries for AI-assisted coding. Compare how well LLMs understand your tech stack.",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://aierastack.com/repo/{search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
-    })} />
+    {!noDefaultJsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "AI Era Stack",
+        "url": "https://aierastack.com",
+        "description": "Find the best libraries for AI-assisted coding. Compare how well LLMs understand your tech stack.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://aierastack.com/repo/{search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      })} />
+    )}
   </head>
   <body class="min-h-screen relative overflow-x-hidden">
     <!-- Background Effects -->

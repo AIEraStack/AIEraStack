@@ -73,7 +73,7 @@ const jsonLdSchema = initialData ? {
 } : null;
 ---
 
-<Layout title={pageTitle} description={pageDescription}>
+<Layout title={pageTitle} description={pageDescription} noDefaultJsonLd={true}>
   {jsonLdSchema && (
     <script type="application/ld+json" set:html={JSON.stringify(jsonLdSchema)} />
   )}
