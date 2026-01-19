@@ -7,8 +7,8 @@ interface DimensionBreakdownProps {
 }
 
 export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) {
-  // Guard against undefined score
-  if (!score || !score.coverage || !score.languageAI || !score.aiReadiness || !score.documentation || !score.adoption || !score.momentum || !score.maintenance) {
+  // Guard against undefined score - don't check languageAI as it may not exist in cached data
+  if (!score || !score.coverage || !score.aiReadiness || !score.documentation || !score.adoption || !score.momentum || !score.maintenance) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
         <h2 className="text-lg font-semibold mb-4 text-white">
@@ -19,6 +19,12 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
     );
   }
 
+  // Provide default languageAI for backwards compatibility with cached data
+  const languageAI = score.languageAI || {
+    score: 50,
+    details: { language: 'Unknown', score: 50 },
+  };
+
   return (
     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
       <h2 className="text-lg font-semibold mb-4 text-white">
@@ -26,7 +32,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
       </h2>
 
       <div className="mb-6">
-        <DimensionRadar score={score} />
+        <DimensionRadar score={score} languageAI={languageAI} />
       </div>
 
       <div className="space-y-6">
@@ -45,10 +51,10 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         <DimensionSection
           name="Language AI"
           weight="20%"
-          score={score.languageAI.score}
+          score={languageAI.score}
           color="#f472b6"
           details={[
-            { label: 'Language', value: score.languageAI.score, raw: score.languageAI.details.language as string },
+            { label: 'Language', value: languageAI.score, raw: languageAI.details.language as string },
           ]}
         />
 
@@ -146,7 +152,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
   );
 }
 
-function DimensionRadar({ score }: { score: RepoScore }) {
+function DimensionRadar({ score, languageAI }: { score: RepoScore; languageAI: { score: number; details: Record<string, unknown> } }) {
   const size = 240;
   const center = size / 2;
   const maxRadius = 80;
@@ -155,7 +161,7 @@ function DimensionRadar({ score }: { score: RepoScore }) {
 
   const axes = [
     { label: 'Coverage', value: score.coverage.score, angle: -90 },
-    { label: 'Language AI', value: score.languageAI.score, angle: -38.6 },
+    { label: 'Language AI', value: languageAI.score, angle: -38.6 },
     { label: 'AI Readiness', value: score.aiReadiness.score, angle: 12.8 },
     { label: 'Documentation', value: score.documentation.score, angle: 64.3 },
     { label: 'Adoption', value: score.adoption.score, angle: 115.7 },
@@ -309,8 +315,8 @@ function DimensionSection({ name, weight, score, color, details, flags }: Dimens
             <span
               key={f.label}
               className={`text-xs px-2 py-1 rounded-full ${f.value
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-slate-700 text-slate-500'
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-slate-700 text-slate-500'
                 }`}
             >
               {f.value ? '✓' : '✗'} {f.label}
