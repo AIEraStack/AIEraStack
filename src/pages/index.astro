@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import { CuratedStacks } from '../components/home/CuratedStacks';
 import { RepoSearch } from '../components/repo/RepoSearch';
 import { RotatingAIName } from '../components/ui/RotatingAIName';
-import { getFeaturedRepos, getReposByCategory } from '../lib/data-loader';
+import { getFeaturedRepos, getReposByCategory, getRepoIndex } from '../lib/data-loader';
 import { CATEGORY_META, type RepoCategory } from '../lib/types';
 
 export const prerender = false;
@@ -11,6 +11,13 @@ export const prerender = false;
 const env = Astro.locals?.runtime?.env;
 
 const featured = await getFeaturedRepos(env);
+
+// Get repo slugs for autocomplete (sorted by score, top 1000)
+const index = await getRepoIndex(env);
+const repoSlugs = Object.values(index.repos)
+  .sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0))
+  .slice(0, 1000)
+  .map(r => `${r.owner}/${r.name}`);
 
 const CATEGORY_GROUPS: {
   id: string;
@@ -139,7 +146,7 @@ const examples = [
       <div class="relative max-w-2xl mx-auto mb-8 group">
         <div class="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
         <div class="relative">
-          <RepoSearch client:load />
+          <RepoSearch repoSlugs={repoSlugs} client:load />
         </div>
       </div>
 
