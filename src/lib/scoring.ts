@@ -1,4 +1,5 @@
 import { LLM_CONFIGS, type LLMConfig } from './llm-configs';
+import { getLanguageAIScore } from './language-ai-scores';
 import type { RepoInfo, ReleaseInfo } from './github';
 import type { NpmPackageInfo } from './npm';
 import type { DocSignals, ActivitySignals } from './types';
@@ -21,7 +22,7 @@ interface SemverVersion {
 export function parseSemverTag(tagName: string): SemverVersion | null {
   const match = tagName.match(/^v?(\d+)\.(\d+)(?:\.(\d+))?$/);
   if (!match) return null;
-  
+
   return {
     major: parseInt(match[1], 10),
     minor: parseInt(match[2], 10),
@@ -57,9 +58,10 @@ export interface RepoScore {
   overall: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
   coverage: DimensionScore;
-  adoption: DimensionScore;
-  documentation: DimensionScore;
+  languageAI: DimensionScore;
   aiReadiness: DimensionScore;
+  documentation: DimensionScore;
+  adoption: DimensionScore;
   momentum: DimensionScore;
   maintenance: DimensionScore;
 }
@@ -69,13 +71,15 @@ export interface AllLLMScores {
 }
 
 const WEIGHTS = {
-  coverage: 0.25,      // LLM training coverage (was timeliness)
-  adoption: 0.20,      // Stars/downloads (was popularity, reduced weight)
-  documentation: 0.15, // README/docs quality (new)
-  aiReadiness: 0.15,   // TypeScript/llms.txt (was aiFriendliness)
-  momentum: 0.15,      // Recent activity/releases (new)
-  maintenance: 0.10,   // PR/issue health (was community)
+  coverage: 0.25,      // LLM training coverage - highest weight
+  languageAI: 0.20,    // Language AI friendliness (NEW)
+  aiReadiness: 0.20,   // TypeScript/llms.txt - increased
+  documentation: 0.15, // README/docs quality - affects RAG
+  adoption: 0.10,      // Stars/downloads - reduced weight
+  momentum: 0.05,      // Recent activity/releases - reduced
+  maintenance: 0.05,   // PR/issue health - reduced
 };
+// AI-related dimensions total: ~65% (coverage + languageAI + aiReadiness + documentation/RAG)
 
 export function calculateScores(
   repo: RepoInfo,
@@ -108,17 +112,19 @@ function calculateScoreForLLM(
   hasAgentMd = false
 ): RepoScore {
   const coverage = calculateCoverage(repo, releases, llm);
-  const adoption = calculateAdoption(repo, npmInfo);
-  const documentation = calculateDocumentation(docSignals);
+  const languageAI = calculateLanguageAI(repo);
   const aiReadiness = calculateAIReadiness(repo, npmInfo, hasLlmsTxt, hasClaudeMd, hasAgentMd);
+  const documentation = calculateDocumentation(docSignals);
+  const adoption = calculateAdoption(repo, npmInfo);
   const momentum = calculateMomentum(activitySignals, releases);
   const maintenance = calculateMaintenance(repo, activitySignals);
 
   const overall =
     coverage.score * WEIGHTS.coverage +
-    adoption.score * WEIGHTS.adoption +
-    documentation.score * WEIGHTS.documentation +
+    languageAI.score * WEIGHTS.languageAI +
     aiReadiness.score * WEIGHTS.aiReadiness +
+    documentation.score * WEIGHTS.documentation +
+    adoption.score * WEIGHTS.adoption +
     momentum.score * WEIGHTS.momentum +
     maintenance.score * WEIGHTS.maintenance;
 
@@ -126,9 +132,10 @@ function calculateScoreForLLM(
     overall: Math.round(overall),
     grade: getGrade(overall),
     coverage,
-    adoption,
-    documentation,
+    languageAI,
     aiReadiness,
+    documentation,
+    adoption,
     momentum,
     maintenance,
   };
@@ -176,6 +183,20 @@ function calculateCoverage(
       maturityScore: Math.round(maturityScore),
       latestRelease: latestRelease?.tagName || 'N/A',
       releaseCovered: latestReleaseDate ? latestReleaseDate <= cutoff : true,
+    },
+  };
+}
+
+// Language AI: How AI-friendly is the primary language?
+function calculateLanguageAI(repo: RepoInfo): DimensionScore {
+  const language = repo.language;
+  const score = getLanguageAIScore(language);
+
+  return {
+    score,
+    details: {
+      language: language || 'Unknown',
+      score,
     },
   };
 }

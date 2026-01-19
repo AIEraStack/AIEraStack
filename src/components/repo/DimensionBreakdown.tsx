@@ -8,7 +8,7 @@ interface DimensionBreakdownProps {
 
 export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) {
   // Guard against undefined score
-  if (!score || !score.coverage || !score.adoption || !score.documentation || !score.aiReadiness || !score.momentum || !score.maintenance) {
+  if (!score || !score.coverage || !score.languageAI || !score.aiReadiness || !score.documentation || !score.adoption || !score.momentum || !score.maintenance) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
         <h2 className="text-lg font-semibold mb-4 text-white">
@@ -18,7 +18,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
       </div>
     );
   }
-  
+
   return (
     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
       <h2 className="text-lg font-semibold mb-4 text-white">
@@ -43,8 +43,46 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         />
 
         <DimensionSection
-          name="Adoption"
+          name="Language AI"
           weight="20%"
+          score={score.languageAI.score}
+          color="#f472b6"
+          details={[
+            { label: 'Language', value: score.languageAI.score, raw: score.languageAI.details.language as string },
+          ]}
+        />
+
+        <DimensionSection
+          name="AI Readiness"
+          weight="20%"
+          score={score.aiReadiness.score}
+          color="#a855f7"
+          flags={[
+            { label: 'TypeScript', value: score.aiReadiness.details.hasTypescript as boolean },
+            { label: 'llms.txt', value: score.aiReadiness.details.hasLlmsTxt as boolean },
+            { label: 'Claude.md', value: score.aiReadiness.details.hasClaudeMd as boolean },
+            { label: 'Agent.md', value: score.aiReadiness.details.hasAgentMd as boolean },
+            { label: 'Good Topics', value: score.aiReadiness.details.hasGoodTopics as boolean },
+            { label: 'License', value: score.aiReadiness.details.hasLicense as boolean },
+          ]}
+        />
+
+        <DimensionSection
+          name="Documentation"
+          weight="15%"
+          score={score.documentation.score}
+          color="#f59e0b"
+          flags={[
+            { label: 'README', value: (score.documentation.details.readmeSize as number) > 2000 },
+            { label: 'Docs', value: score.documentation.details.hasDocs as boolean },
+            { label: 'Examples', value: score.documentation.details.hasExamples as boolean },
+            { label: 'Changelog', value: score.documentation.details.hasChangelog as boolean },
+          ]}
+        />
+
+        <DimensionSection
+          name="Adoption"
+          weight="10%"
           score={score.adoption.score}
           color="#10b981"
           details={[
@@ -84,7 +122,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
 
         <DimensionSection
           name="Momentum"
-          weight="15%"
+          weight="5%"
           score={score.momentum.score}
           color="#06b6d4"
           details={[
@@ -95,7 +133,7 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
 
         <DimensionSection
           name="Maintenance"
-          weight="10%"
+          weight="5%"
           score={score.maintenance.score}
           color="#ec4899"
           details={[
@@ -117,11 +155,12 @@ function DimensionRadar({ score }: { score: RepoScore }) {
 
   const axes = [
     { label: 'Coverage', value: score.coverage.score, angle: -90 },
-    { label: 'Adoption', value: score.adoption.score, angle: -30 },
-    { label: 'Documentation', value: score.documentation.score, angle: 30 },
-    { label: 'AI Readiness', value: score.aiReadiness.score, angle: 90 },
-    { label: 'Momentum', value: score.momentum.score, angle: 150 },
-    { label: 'Maintenance', value: score.maintenance.score, angle: 210 },
+    { label: 'Language AI', value: score.languageAI.score, angle: -38.6 },
+    { label: 'AI Readiness', value: score.aiReadiness.score, angle: 12.8 },
+    { label: 'Documentation', value: score.documentation.score, angle: 64.3 },
+    { label: 'Adoption', value: score.adoption.score, angle: 115.7 },
+    { label: 'Momentum', value: score.momentum.score, angle: 167.1 },
+    { label: 'Maintenance', value: score.maintenance.score, angle: 218.6 },
   ];
 
   const toPoint = (angleDeg: number, radius: number) => {
@@ -207,9 +246,9 @@ function DimensionRadar({ score }: { score: RepoScore }) {
 
         {axes.map((axis) => {
           const { x, y } = toPoint(axis.angle, labelRadius);
-          const textAnchor = 
+          const textAnchor =
             Math.abs(axis.angle) < 45 || Math.abs(axis.angle - 360) < 45 ? 'start' :
-            Math.abs(axis.angle - 180) < 45 ? 'end' : 'middle';
+              Math.abs(axis.angle - 180) < 45 ? 'end' : 'middle';
           return (
             <text
               key={`${axis.label}-label`}
@@ -269,11 +308,10 @@ function DimensionSection({ name, weight, score, color, details, flags }: Dimens
           {flags.map((f) => (
             <span
               key={f.label}
-              className={`text-xs px-2 py-1 rounded-full ${
-                f.value
+              className={`text-xs px-2 py-1 rounded-full ${f.value
                   ? 'bg-green-500/20 text-green-400'
                   : 'bg-slate-700 text-slate-500'
-              }`}
+                }`}
             >
               {f.value ? '✓' : '✗'} {f.label}
             </span>
