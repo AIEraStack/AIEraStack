@@ -54,9 +54,51 @@ const pageTitle = titleNames.length > 0
 const compareDescription = titleNames.length > 0
   ? `Compare ${titleNames.join(' vs ')} AI coding compatibility. See which library works best with Cursor, Codex & Claude.`
   : 'Compare libraries for AI coding compatibility. Find which frameworks work best with Cursor, Codex & Claude.';
+
+// Generate ItemList JSON-LD for compare page (shows libraries being compared)
+const itemListSchema = titleNames.length > 0 ? {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": `Compare ${titleNames.join(' vs ')}`,
+  "description": compareDescription,
+  "numberOfItems": compareRepos.length,
+  "itemListElement": compareRepos.map((repo, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "name": repo.name,
+    "url": `https://aierastack.com/repo/${repo.slug}`
+  }))
+} : null;
+
+// Generate BreadcrumbList schema
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://aierastack.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Compare",
+      "item": "https://aierastack.com/compare"
+    }
+  ]
+};
+
+const jsonLdSchemas = itemListSchema 
+  ? [itemListSchema, breadcrumbSchema] 
+  : [breadcrumbSchema];
 ---
 
-<Layout title={pageTitle} description={compareDescription}>
+<Layout title={pageTitle} description={compareDescription} noDefaultJsonLd={titleNames.length > 0}>
+  {jsonLdSchemas.map((schema) => (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  ))}
   <div class="max-w-7xl mx-auto px-4 py-8">
     <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
       ← Back to search

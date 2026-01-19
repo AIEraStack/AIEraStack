@@ -51,7 +51,7 @@ const pageDescription = initialData?.repo.description
 const defaultLlmId = 'gpt-5.2-codex';
 
 // Generate JSON-LD for SoftwareApplication schema
-const jsonLdSchema = initialData ? {
+const softwareAppSchema = initialData ? {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": initialData.repo.name,
@@ -71,12 +71,37 @@ const jsonLdSchema = initialData ? {
     "name": owner
   }
 } : null;
+
+// Generate BreadcrumbList schema for better navigation in search results
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://aierastack.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": `${owner}/${name}`,
+      "item": `https://aierastack.com/repo/${owner}/${name}`
+    }
+  ]
+};
+
+// Combine schemas into an array
+const jsonLdSchemas = softwareAppSchema 
+  ? [softwareAppSchema, breadcrumbSchema] 
+  : [breadcrumbSchema];
 ---
 
 <Layout title={pageTitle} description={pageDescription} noDefaultJsonLd={true}>
-  {jsonLdSchema && (
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLdSchema)} />
-  )}
+  {jsonLdSchemas.map((schema) => (
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  ))}
   <div class="max-w-6xl mx-auto px-4 py-8">
     <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
       ← Back to search
