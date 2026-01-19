@@ -51,9 +51,12 @@ const titleNames = compareRepos.map(r => r.name).filter(Boolean);
 const pageTitle = titleNames.length > 0 
   ? `Compare ${titleNames.join(' vs ')} - AI Era Stack`
   : 'Compare Libraries - AI Era Stack';
+const compareDescription = titleNames.length > 0
+  ? `Compare ${titleNames.join(' vs ')} AI coding compatibility. See which library works best with Cursor, Codex & Claude.`
+  : 'Compare libraries for AI coding compatibility. Find which frameworks work best with Cursor, Codex & Claude.';
 ---
 
-<Layout title={pageTitle} description="Compare AI compatibility scores across multiple libraries">
+<Layout title={pageTitle} description={compareDescription}>
   <div class="max-w-7xl mx-auto px-4 py-8">
     <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
       ← Back to search

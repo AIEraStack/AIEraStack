@@ -34,11 +34,13 @@ if (!initialData) {
   initialData = await fetchRepoFromApi(owner, name, Astro.request);
 }
 
-const pageTitle = initialData 
-  ? `${initialData.repo.name} - AI Era Stack`
-  : `${owner}/${name} - AI Era Stack`;
-
 const aiScore = initialData?.analysis?.overall ?? null;
+
+const pageTitle = initialData 
+  ? aiScore
+    ? `${initialData.repo.name} AI Readiness: ${aiScore}/100 | AI Era Stack`
+    : `${initialData.repo.name} - AI Era Stack`
+  : `${owner}/${name} - AI Era Stack`;
 
 const pageDescription = initialData?.repo.description 
   ? aiScore 
