@@ -20,7 +20,7 @@ export const LLM_CONFIGS: LLMConfig[] = [
     id: 'claude-4.5-opus',
     name: 'Claude 4.5 (Opus/Sonnet)',
     provider: 'Anthropic',
-    knowledgeCutoff: '2025-05-01',
+    knowledgeCutoff: '2025-03-01',
     trainingCutoff: '2025-08-01',
     color: '#d4a574',
   },
