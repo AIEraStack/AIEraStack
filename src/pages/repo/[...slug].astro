@@ -38,14 +38,43 @@ const pageTitle = initialData
   ? `${initialData.repo.name} - AI Era Stack`
   : `${owner}/${name} - AI Era Stack`;
 
+const aiScore = initialData?.analysis?.overall ?? null;
+
 const pageDescription = initialData?.repo.description 
-  ? `${initialData.repo.description} - See how well AI models understand this project.`
-  : `See how well AI models understand ${owner}/${name}`;
+  ? aiScore 
+    ? `${initialData.repo.description} | AI Era Stack Score: ${aiScore}/100 - How AI-ready is this library?`
+    : `${initialData.repo.description} - Check AI readiness on AI Era Stack.`
+  : `${owner}/${name} - Check how AI-ready this library is on AI Era Stack.`;
 
 const defaultLlmId = 'gpt-5.2-codex';
+
+// Generate JSON-LD for SoftwareApplication schema
+const jsonLdSchema = initialData ? {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": initialData.repo.name,
+  "description": initialData.repo.description || `${owner}/${name} GitHub repository`,
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform",
+  "url": `https://github.com/${owner}/${name}`,
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": initialData.analysis?.overall ?? 0,
+    "bestRating": 100,
+    "worstRating": 0,
+    "ratingCount": initialData.repo.stars ?? 1
+  },
+  "author": {
+    "@type": initialData.repo.owner?.type === 'Organization' ? "Organization" : "Person",
+    "name": owner
+  }
+} : null;
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
+  {jsonLdSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLdSchema)} />
+  )}
   <div class="max-w-6xl mx-auto px-4 py-8">
     <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
       ← Back to search
