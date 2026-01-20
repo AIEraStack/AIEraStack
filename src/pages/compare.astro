@@ -1,28 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getCachedRepo, getRepoIndex } from '../lib/data-loader';
+import { getCachedRepo, getRepoIndex } from '../lib/d1-data-loader';
+import { getOrFetchRepo } from '../lib/repo-fetcher';
 import { CompareSection } from '../components/compare/CompareSection';
 import { CompareInput } from '../components/compare/CompareInput';
 import type { CachedRepoData } from '../lib/types';
 
 export const prerender = false;
 
-async function fetchRepoFromApi(owner: string, name: string, request: Request): Promise<CachedRepoData | null> {
-  try {
-    const apiUrl = new URL('/api/repo', request.url);
-    apiUrl.searchParams.set('owner', owner);
-    apiUrl.searchParams.set('name', name);
-    const response = await fetch(apiUrl);
-    if (!response.ok) return null;
-    return (await response.json()) as CachedRepoData;
-  } catch {
-    return null;
-  }
-}
-
 const url = new URL(Astro.request.url);
 const reposParam = url.searchParams.get('repos') || '';
-const env = Astro.locals?.runtime?.env;
+const env = Astro.locals?.runtime?.env ?? {};
 
 const repoSlugs = reposParam
   .split(',')
@@ -32,10 +20,7 @@ const repoSlugs = reposParam
 
 const repoDataPromises = repoSlugs.map(async (slug) => {
   const [owner, name] = slug.split('/');
-  let data = await getCachedRepo(owner, name, env);
-  if (!data) {
-    data = await fetchRepoFromApi(owner, name, Astro.request);
-  }
+  const data = await getOrFetchRepo(owner, name, env, getCachedRepo);
   return { slug, owner, name, data };
 });
 

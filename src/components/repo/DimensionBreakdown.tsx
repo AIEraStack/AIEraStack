@@ -7,8 +7,9 @@ interface DimensionBreakdownProps {
 }
 
 export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) {
-  // Guard against undefined score - don't check languageAI as it may not exist in cached data
-  if (!score || !score.coverage || !score.aiReadiness || !score.documentation || !score.modelCapability || !score.adoption || !score.momentum || !score.maintenance) {
+  // Guard against truly undefined score - only check core required fields
+  // New fields like modelCapability and languageAI may not exist in older cached data
+  if (!score || !score.coverage || !score.adoption) {
     return (
       <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
         <h2 className="text-lg font-semibold mb-4 text-white">
@@ -19,10 +20,35 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
     );
   }
 
-  // Provide default languageAI for backwards compatibility with cached data
+  // Provide defaults for dimensions that may not exist in cached data
   const languageAI = score.languageAI || {
     score: 50,
     details: { language: 'Unknown', score: 50 },
+  };
+
+  const modelCapability = score.modelCapability || {
+    score: 85,
+    details: { sweVerified: 80, humanEval: 90, debugging: 85, codeGeneration: 85 },
+  };
+
+  const aiReadiness = score.aiReadiness || {
+    score: 50,
+    details: { hasTypescript: false, hasLlmsTxt: false, hasClaudeMd: false, hasAgentMd: false, hasGoodTopics: true, hasLicense: true },
+  };
+
+  const documentation = score.documentation || {
+    score: 50,
+    details: { readmeSize: 3000, hasDocs: false, hasExamples: false, hasChangelog: false },
+  };
+
+  const momentum = score.momentum || {
+    score: 50,
+    details: { commitFrequency: 5, recentCommitsCount: 10, avgDaysBetweenReleases: 30 },
+  };
+
+  const maintenance = score.maintenance || {
+    score: 50,
+    details: { issueRatio: 0.01, avgPRCloseTimeHours: 48, recentClosedPRsCount: 10, openIssues: 50 },
   };
 
   return (
@@ -61,41 +87,41 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         <DimensionSection
           name="AI Readiness"
           weight="20%"
-          score={score.aiReadiness.score}
+          score={aiReadiness.score}
           color="#a855f7"
           flags={[
-            { label: 'TypeScript', value: score.aiReadiness.details.hasTypescript as boolean },
-            { label: 'llms.txt', value: score.aiReadiness.details.hasLlmsTxt as boolean },
-            { label: 'Claude.md', value: score.aiReadiness.details.hasClaudeMd as boolean },
-            { label: 'Agent.md', value: score.aiReadiness.details.hasAgentMd as boolean },
-            { label: 'Good Topics', value: score.aiReadiness.details.hasGoodTopics as boolean },
-            { label: 'License', value: score.aiReadiness.details.hasLicense as boolean },
+            { label: 'TypeScript', value: aiReadiness.details.hasTypescript as boolean },
+            { label: 'llms.txt', value: aiReadiness.details.hasLlmsTxt as boolean },
+            { label: 'Claude.md', value: aiReadiness.details.hasClaudeMd as boolean },
+            { label: 'Agent.md', value: aiReadiness.details.hasAgentMd as boolean },
+            { label: 'Good Topics', value: aiReadiness.details.hasGoodTopics as boolean },
+            { label: 'License', value: aiReadiness.details.hasLicense as boolean },
           ]}
         />
 
         <DimensionSection
           name="Documentation"
           weight="10%"
-          score={score.documentation.score}
+          score={documentation.score}
           color="#f59e0b"
           flags={[
-            { label: 'README', value: (score.documentation.details.readmeSize as number) > 2000 },
-            { label: 'Docs', value: score.documentation.details.hasDocs as boolean },
-            { label: 'Examples', value: score.documentation.details.hasExamples as boolean },
-            { label: 'Changelog', value: score.documentation.details.hasChangelog as boolean },
+            { label: 'README', value: (documentation.details.readmeSize as number) > 2000 },
+            { label: 'Docs', value: documentation.details.hasDocs as boolean },
+            { label: 'Examples', value: documentation.details.hasExamples as boolean },
+            { label: 'Changelog', value: documentation.details.hasChangelog as boolean },
           ]}
         />
 
         <DimensionSection
           name="Model Capability"
           weight="10%"
-          score={score.modelCapability.score}
+          score={modelCapability.score}
           color="#8b5cf6"
           details={[
-            { label: 'SWE-bench Verified', value: score.modelCapability.details.sweVerified as number },
-            { label: 'HumanEval', value: score.modelCapability.details.humanEval as number },
-            { label: 'Debugging', value: score.modelCapability.details.debugging as number },
-            { label: 'Code Generation', value: score.modelCapability.details.codeGeneration as number },
+            { label: 'SWE-bench Verified', value: modelCapability.details.sweVerified as number },
+            { label: 'HumanEval', value: modelCapability.details.humanEval as number },
+            { label: 'Debugging', value: modelCapability.details.debugging as number },
+            { label: 'Code Generation', value: modelCapability.details.codeGeneration as number },
           ]}
         />
 
@@ -114,22 +140,22 @@ export function DimensionBreakdown({ score, llmName }: DimensionBreakdownProps) 
         <DimensionSection
           name="Momentum"
           weight="5%"
-          score={score.momentum.score}
+          score={momentum.score}
           color="#06b6d4"
           details={[
-            { label: 'Commit Frequency', value: Math.min(100, (score.momentum.details.commitFrequency as number) * 10), raw: (score.momentum.details.commitFrequency as number).toFixed(1) + '/wk' },
-            { label: 'Recent Commits', value: Math.min(100, (score.momentum.details.recentCommitsCount as number) * 3.33), raw: String(score.momentum.details.recentCommitsCount) },
+            { label: 'Commit Frequency', value: Math.min(100, (momentum.details.commitFrequency as number) * 10), raw: (momentum.details.commitFrequency as number).toFixed(1) + '/wk' },
+            { label: 'Recent Commits', value: Math.min(100, (momentum.details.recentCommitsCount as number) * 3.33), raw: String(momentum.details.recentCommitsCount) },
           ]}
         />
 
         <DimensionSection
           name="Maintenance"
           weight="5%"
-          score={score.maintenance.score}
+          score={maintenance.score}
           color="#ec4899"
           details={[
-            { label: 'Issue Health', value: score.maintenance.details.issueRatio as number < 0.05 ? 75 : 25 },
-            { label: 'PR Close Time', value: Math.max(0, 100 - (score.maintenance.details.avgPRCloseTimeHours as number) / 10), raw: Math.round(score.maintenance.details.avgPRCloseTimeHours as number) + 'h' },
+            { label: 'Issue Health', value: maintenance.details.issueRatio as number < 0.05 ? 75 : 25 },
+            { label: 'PR Close Time', value: Math.max(0, 100 - (maintenance.details.avgPRCloseTimeHours as number) / 10), raw: Math.round(maintenance.details.avgPRCloseTimeHours as number) + 'h' },
           ]}
         />
       </div>
@@ -144,21 +170,22 @@ function DimensionRadar({ score, languageAI }: { score: RepoScore; languageAI: {
   const labelRadius = 105;
   const levels = [0.25, 0.5, 0.75, 1];
 
-  // Provide default modelCapability for backwards compatibility with cached data
-  const modelCapability = score.modelCapability || {
-    score: 85,
-    details: { sweVerified: 80, humanEval: 90, debugging: 85, codeGeneration: 85 },
-  };
+  // Provide defaults for backwards compatibility with cached data
+  const modelCapability = score.modelCapability || { score: 85 };
+  const aiReadiness = score.aiReadiness || { score: 50 };
+  const documentation = score.documentation || { score: 50 };
+  const momentum = score.momentum || { score: 50 };
+  const maintenance = score.maintenance || { score: 50 };
 
   const axes = [
     { label: 'Coverage', value: score.coverage.score, angle: -90 },
     { label: 'Lang AI', value: languageAI.score, angle: -45 },
-    { label: 'AI Ready', value: score.aiReadiness.score, angle: 0 },
-    { label: 'Docs', value: score.documentation.score, angle: 45 },
+    { label: 'AI Ready', value: aiReadiness.score, angle: 0 },
+    { label: 'Docs', value: documentation.score, angle: 45 },
     { label: 'Model Cap', value: modelCapability.score, angle: 90 },
     { label: 'Adoption', value: score.adoption.score, angle: 135 },
-    { label: 'Momentum', value: score.momentum.score, angle: 180 },
-    { label: 'Maintain', value: score.maintenance.score, angle: 225 },
+    { label: 'Momentum', value: momentum.score, angle: 180 },
+    { label: 'Maintain', value: maintenance.score, angle: 225 },
   ];
 
   const toPoint = (angleDeg: number, radius: number) => {

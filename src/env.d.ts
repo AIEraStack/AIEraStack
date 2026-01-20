@@ -1,16 +1,26 @@
 /// <reference types="astro/client" />
 
-interface R2Object {
-  json(): Promise<unknown>;
+interface D1Result<T> {
+  results: T[];
+  success: boolean;
+  meta: { changes: number; last_row_id: number; duration: number };
 }
 
-interface R2Bucket {
-  get(key: string): Promise<R2Object | null>;
-  put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<void>;
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement;
+  first<T = unknown>(column?: string): Promise<T | null>;
+  all<T = unknown>(): Promise<D1Result<T>>;
+  run(): Promise<D1Result<unknown>>;
+}
+
+interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+  batch<T>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
+  exec(query: string): Promise<{ count: number }>;
 }
 
 interface CloudflareEnv {
-  DATA_BUCKET?: R2Bucket;
+  DB?: D1Database;
   GITHUB_TOKEN?: string;
   SENTRY_DSN?: string;
   SENTRY_ENV?: string;

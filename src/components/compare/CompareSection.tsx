@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LLM_CONFIGS, getLLMById } from '../../lib/llm-configs';
 import type { CachedRepoData } from '../../lib/types';
 
@@ -7,15 +7,6 @@ interface RepoInput {
   owner: string;
   name: string;
   initialData: CachedRepoData | null;
-}
-
-interface RepoState {
-  slug: string;
-  owner: string;
-  name: string;
-  data: CachedRepoData | null;
-  status: 'loading' | 'success' | 'error';
-  error: string;
 }
 
 interface CompareSectionProps {
@@ -50,67 +41,18 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-function toRepoState(repo: RepoInput): RepoState {
-  return {
+export function CompareSection({ repos }: CompareSectionProps) {
+  const [selectedLLMId, setSelectedLLMId] = useState('gpt-5.2-codex');
+  const selectedLLM = getLLMById(selectedLLMId);
+
+  // Data is now always provided via SSR, map directly to state shape
+  const repoState = repos.map(repo => ({
     slug: repo.slug,
     owner: repo.owner,
     name: repo.name,
     data: repo.initialData,
-    status: repo.initialData ? 'success' : 'loading',
-    error: '',
-  };
-}
-
-export function CompareSection({ repos }: CompareSectionProps) {
-  const [selectedLLMId, setSelectedLLMId] = useState('gpt-5.2-codex');
-  const [repoState, setRepoState] = useState<RepoState[]>(() => repos.map(toRepoState));
-  const selectedLLM = getLLMById(selectedLLMId);
-
-  useEffect(() => {
-    const initialState = repos.map(toRepoState);
-    setRepoState(initialState);
-
-    let cancelled = false;
-    const missing = initialState.filter((repo) => !repo.data);
-    if (missing.length === 0) return;
-
-    missing.forEach(async (repo) => {
-      try {
-        const response = await fetch(
-          `/api/repo?owner=${encodeURIComponent(repo.owner)}&name=${encodeURIComponent(repo.name)}`
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const message = errorData.error || `Failed to fetch: ${response.status}`;
-          throw new Error(message);
-        }
-
-        const repoData: CachedRepoData = await response.json();
-        if (cancelled) return;
-
-        setRepoState((prev) =>
-          prev.map((item) =>
-            item.slug === repo.slug
-              ? { ...item, data: repoData, status: 'success', error: '' }
-              : item
-          )
-        );
-      } catch (err) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : 'Failed to load repository data';
-        setRepoState((prev) =>
-          prev.map((item) =>
-            item.slug === repo.slug ? { ...item, status: 'error', error: message } : item
-          )
-        );
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [repos]);
+    error: repo.initialData ? '' : 'Data not available',
+  }));
 
   const sortedRepos = [...repoState].sort((a, b) => {
     const scoreA = a.data?.scores[selectedLLMId]?.overall ?? -1;
@@ -130,11 +72,10 @@ export function CompareSection({ repos }: CompareSectionProps) {
               <button
                 key={llm.id}
                 onClick={() => setSelectedLLMId(llm.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  selectedLLMId === llm.id
-                    ? 'text-white ring-2 ring-offset-2 ring-offset-slate-900'
-                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${selectedLLMId === llm.id
+                  ? 'text-white ring-2 ring-offset-2 ring-offset-slate-900'
+                  : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
                 style={{
                   backgroundColor: selectedLLMId === llm.id ? llm.color : undefined,
                 }}
@@ -162,11 +103,9 @@ export function CompareSection({ repos }: CompareSectionProps) {
           const description = repoData?.repo.description?.trim();
           const descriptionText =
             description ||
-            (repo.status === 'error'
-              ? repo.error || 'Failed to load repository data'
-              : repo.status === 'loading'
-                ? 'Fetching repository data...'
-                : 'No description');
+            (repo.error
+              ? repo.error
+              : 'No description');
           const starsText = repoData ? formatNumber(repoData.repo.stars) : '—';
           const forksText = repoData ? formatNumber(repoData.repo.forks) : '—';
           const weeklyDownloads = repoData?.npmInfo?.weeklyDownloads ?? null;
@@ -175,9 +114,8 @@ export function CompareSection({ repos }: CompareSectionProps) {
             <a
               key={repo.slug}
               href={`/repo/${repo.slug}`}
-              className={`glass-card p-6 rounded-2xl transition-all hover:border-cyan-500/30 ${
-                isWinner ? 'ring-2 ring-yellow-500/50' : ''
-              }`}
+              className={`glass-card p-6 rounded-2xl transition-all hover:border-cyan-500/30 ${isWinner ? 'ring-2 ring-yellow-500/50' : ''
+                }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
@@ -307,9 +245,8 @@ export function CompareSection({ repos }: CompareSectionProps) {
                 {LLM_CONFIGS.map((llm) => (
                   <th
                     key={llm.id}
-                    className={`text-center py-3 px-2 font-medium ${
-                      llm.id === selectedLLMId ? 'text-white' : 'text-slate-400'
-                    }`}
+                    className={`text-center py-3 px-2 font-medium ${llm.id === selectedLLMId ? 'text-white' : 'text-slate-400'
+                      }`}
                   >
                     <div className="flex flex-col items-center gap-1">
                       <span
@@ -343,9 +280,8 @@ export function CompareSection({ repos }: CompareSectionProps) {
                       return (
                         <td
                           key={llm.id}
-                          className={`text-center py-3 px-2 ${
-                            llm.id === selectedLLMId ? 'bg-white/5' : ''
-                          }`}
+                          className={`text-center py-3 px-2 ${llm.id === selectedLLMId ? 'bg-white/5' : ''
+                            }`}
                         >
                           <span className={`font-medium ${scoreClass}`}>{scoreText}</span>
                         </td>

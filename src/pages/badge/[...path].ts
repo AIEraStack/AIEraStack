@@ -1,19 +1,17 @@
 import type { APIRoute } from 'astro';
-import { getCachedRepo } from '../../lib/data-loader';
+import { getCachedRepo } from '../../lib/d1-data-loader';
+import { fetchAndSaveRepo, findCuratedRepo } from '../../lib/repo-fetcher';
 import { captureException, type SentryEnv } from '../../lib/sentry';
-import type { CachedRepoData } from '../../lib/types';
 
-interface R2Object {
-  json(): Promise<unknown>;
-}
-
-interface R2Bucket {
-  get(key: string): Promise<R2Object | null>;
-  put(key: string, value: string, options?: { httpMetadata?: { contentType?: string } }): Promise<void>;
+interface D1Database {
+  prepare(query: string): any;
+  batch<T>(statements: any[]): Promise<any[]>;
+  exec(query: string): Promise<{ count: number }>;
 }
 
 interface CloudflareEnv extends SentryEnv {
-  DATA_BUCKET?: R2Bucket;
+  DB?: D1Database;
+  GITHUB_TOKEN?: string;
 }
 
 const GRADE_COLORS = {
@@ -34,7 +32,7 @@ const LLM_ALIASES: Record<string, string> = {
 
 function badgeResponse(label: string, message: string, color: string): Response {
   const svg = generateBadgeSVG(label, message, color);
-  
+
   return new Response(svg, {
     headers: {
       'Content-Type': 'image/svg+xml',
@@ -48,7 +46,7 @@ function generateBadgeSVG(label: string, message: string, color: string): string
   const labelWidth = label.length * 6.5 + 10;
   const messageWidth = message.length * 7.5 + 10;
   const totalWidth = labelWidth + messageWidth;
-  
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${label}: ${message}">
   <title>${label}: ${message}</title>
   <linearGradient id="s" x2="0" y2="100%">
@@ -84,28 +82,28 @@ function escapeXml(str: string): string {
 export const GET: APIRoute = async ({ params, request, locals }) => {
   const url = new URL(request.url);
   const pathParts = params.path?.split('/') || [];
-  
+
   if (pathParts.length < 2) {
     return badgeResponse('error', 'invalid', '999999');
   }
-  
+
   let owner = pathParts[0];
   let repo = pathParts[1];
-  
+
   // Remove .svg suffix if present
   if (repo.endsWith('.svg')) {
     repo = repo.slice(0, -4);
   }
-  
+
   let llmId = url.searchParams.get('llm') || DEFAULT_LLM;
   // Apply alias mapping for legacy LLM IDs
   llmId = LLM_ALIASES[llmId] || llmId;
   const env = (locals?.runtime?.env as CloudflareEnv | undefined) ?? {};
-  
+
   try {
     // Try to read from cache first
-    const cached = await getCachedRepo(owner, repo, { DATA_BUCKET: env.DATA_BUCKET });
-    
+    const cached = await getCachedRepo(owner, repo, { DB: env.DB });
+
     if (cached && cached.scores && cached.scores[llmId]) {
       const score = cached.scores[llmId];
       return badgeResponse(
@@ -114,29 +112,27 @@ export const GET: APIRoute = async ({ params, request, locals }) => {
         GRADE_COLORS[score.grade] || '666666'
       );
     }
-    
-    // If cache doesn't exist, call API to fetch data
-    const apiUrl = new URL('/api/repo', url.origin);
-    apiUrl.searchParams.set('owner', owner);
-    apiUrl.searchParams.set('name', repo);
-    
-    const response = await fetch(apiUrl.toString());
-    
-    if (!response.ok) {
+
+    // If cache doesn't exist, fetch directly
+    const curatedMatch = findCuratedRepo(owner, repo);
+    const lookupOwner = curatedMatch?.owner || owner;
+    const lookupName = curatedMatch?.name || repo;
+
+    try {
+      const data = await fetchAndSaveRepo(lookupOwner, lookupName, curatedMatch, { DB: env.DB, GITHUB_TOKEN: env.GITHUB_TOKEN });
+
+      if (data.scores && data.scores[llmId]) {
+        const score = data.scores[llmId];
+        return badgeResponse(
+          'AI Era Stack',
+          `${score.grade} · ${score.overall}`,
+          GRADE_COLORS[score.grade as keyof typeof GRADE_COLORS] || '666666'
+        );
+      }
+    } catch {
       return badgeResponse('AI Era Stack', 'not found', '999999');
     }
-    
-    const data = (await response.json()) as CachedRepoData;
-    
-    if (data.scores && data.scores[llmId]) {
-      const score = data.scores[llmId];
-      return badgeResponse(
-        'AI Era Stack',
-        `${score.grade} · ${score.overall}`,
-        GRADE_COLORS[score.grade] || '666666'
-      );
-    }
-    
+
     return badgeResponse('AI Era Stack', 'error', '999999');
   } catch (error) {
     captureException(error, {

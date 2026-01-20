@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import curatedSource from '../data/curated-repos.json';
-import { getRepoIndex, type DataEnv } from '../lib/data-loader';
+import curatedSource from '../config/curated-repos.json';
+import { getRepoIndex, type DataEnv } from '../lib/d1-data-loader';
 import type { CuratedRepo, RepoIndexEntry } from '../lib/types';
 
 const SITE_URL = 'https://aierastack.com';
@@ -95,11 +95,11 @@ export const GET: APIRoute = async ({ locals }) => {
     const repoUrl = entry
       ? buildRepoUrl(entry, lastmod)
       : {
-          loc: `${SITE_URL}/repo/${repo.owner}/${repo.name}`,
-          lastmod,
-          changefreq: 'weekly',
-          priority: '0.6',
-        };
+        loc: `${SITE_URL}/repo/${repo.owner}/${repo.name}`,
+        lastmod,
+        changefreq: 'weekly',
+        priority: '0.6',
+      };
 
     if (!seen.has(repoUrl.loc)) {
       urls.push(repoUrl);

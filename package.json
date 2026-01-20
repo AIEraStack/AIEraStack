@@ -7,8 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "fetch-data": "npx tsx scripts/fetch-data.ts",
-    "r2:download:all": "npx tsx scripts/r2-download.ts"
+    "update-d1": "npx tsx scripts/update-d1.ts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.12",
@@ -22,5 +21,9 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsx": "^4.21.0"
   }
 }

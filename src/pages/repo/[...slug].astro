@@ -1,38 +1,22 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { RepoAnalyzer } from '../../components/repo/RepoAnalyzer';
-import { getCachedRepo } from '../../lib/data-loader';
+import { getCachedRepo } from '../../lib/d1-data-loader';
+import { getOrFetchRepo } from '../../lib/repo-fetcher';
 import type { CachedRepoData } from '../../lib/types';
 
 export const prerender = false;
 
-async function fetchRepoFromApi(owner: string, name: string, request: Request): Promise<CachedRepoData | null> {
-  try {
-    const apiUrl = new URL('/api/repo', request.url);
-    apiUrl.searchParams.set('owner', owner);
-    apiUrl.searchParams.set('name', name);
-    const response = await fetch(apiUrl);
-    if (!response.ok) return null;
-    return (await response.json()) as CachedRepoData;
-  } catch {
-    return null;
-  }
-}
-
 const { slug } = Astro.params;
 const parts = slug?.split('/') || [];
-const env = Astro.locals?.runtime?.env;
+const env = Astro.locals?.runtime?.env ?? {};
 
 if (parts.length !== 2) {
   return Astro.redirect('/');
 }
 
 const [owner, name] = parts;
-const cached = await getCachedRepo(owner, name, env);
-let initialData = cached;
-if (!initialData) {
-  initialData = await fetchRepoFromApi(owner, name, Astro.request);
-}
+const initialData = await getOrFetchRepo(owner, name, env, getCachedRepo);
 
 const aiScore = initialData?.analysis?.overall ?? null;
 

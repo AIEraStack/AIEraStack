@@ -22,6 +22,20 @@ export interface LLMConfig {
 
 export const LLM_CONFIGS: LLMConfig[] = [
   {
+    id: 'gpt-5.2-codex',
+    name: 'GPT-5.2-Codex',
+    provider: 'OpenAI',
+    knowledgeCutoff: '2025-08-31',
+    trainingCutoff: '2025-08-31',
+    color: '#10a37f',
+    benchmarks: {
+      sweVerified: 80, // 80% Verified, 56.4% Pro
+      humanEval: 90,
+      debugging: 85,
+      codeGeneration: 90,
+    },
+  },
+  {
     id: 'claude-4.5-opus',
     name: 'Claude 4.5 Opus',
     provider: 'Anthropic',
@@ -47,20 +61,6 @@ export const LLM_CONFIGS: LLMConfig[] = [
       humanEval: 92,
       debugging: 90,
       codeGeneration: 88,
-    },
-  },
-  {
-    id: 'gpt-5.2-codex',
-    name: 'GPT-5.2-Codex',
-    provider: 'OpenAI',
-    knowledgeCutoff: '2025-08-31',
-    trainingCutoff: '2025-08-31',
-    color: '#10a37f',
-    benchmarks: {
-      sweVerified: 80, // 80% Verified, 56.4% Pro
-      humanEval: 90,
-      debugging: 85,
-      codeGeneration: 90,
     },
   },
   {

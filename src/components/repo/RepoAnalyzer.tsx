@@ -8,32 +8,27 @@ import type { CachedRepoData } from '../../lib/types';
 interface RepoAnalyzerProps {
   owner: string;
   name: string;
-  initialData?: CachedRepoData | null;
+  initialData: CachedRepoData | null;
   defaultLLMId?: string;
 }
 
-type LoadingState = 'loading' | 'success' | 'error';
-
-export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = 'gpt-5.2-codex' }: RepoAnalyzerProps) {
-  const [state, setState] = useState<LoadingState>(initialData ? 'success' : 'loading');
-  const [error, setError] = useState<string>('');
-  const [data, setData] = useState<CachedRepoData | null>(initialData);
+export function RepoAnalyzer({ owner, name, initialData, defaultLLMId = 'gpt-5.2-codex' }: RepoAnalyzerProps) {
+  // Data is now always provided via SSR, no client-side fetching needed
+  const data = initialData;
 
   // Ensure selectedLLMId is valid, fallback to best LLM if not found in scores
   const getInitialLLMId = () => {
-    if (!initialData?.scores || Object.keys(initialData.scores).length === 0) {
+    if (!data?.scores || Object.keys(data.scores).length === 0) {
       return defaultLLMId;
     }
-    if (initialData.scores[defaultLLMId]) {
+    if (data.scores[defaultLLMId]) {
       return defaultLLMId;
     }
-    const bestId = getBestLLM(initialData.scores);
-    // Double-check the best ID exists in scores
-    if (initialData.scores[bestId]) {
+    const bestId = getBestLLM(data.scores);
+    if (data.scores[bestId]) {
       return bestId;
     }
-    // Fallback to first available LLM
-    return Object.keys(initialData.scores)[0] || defaultLLMId;
+    return Object.keys(data.scores)[0] || defaultLLMId;
   };
 
   const [selectedLLMId, setSelectedLLMId] = useState<string>(getInitialLLMId());
@@ -48,56 +43,8 @@ export function RepoAnalyzer({ owner, name, initialData = null, defaultLLMId = '
     }
   }, [data, selectedLLMId]);
 
-  useEffect(() => {
-    const isInitialDataForRepo =
-      initialData &&
-      initialData.owner.toLowerCase() === owner.toLowerCase() &&
-      initialData.name.toLowerCase() === name.toLowerCase();
-
-    if (isInitialDataForRepo) {
-      return;
-    }
-
-    async function loadData() {
-      setState('loading');
-      setError('');
-
-      try {
-        const response = await fetch(`/api/repo?owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(name)}`);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to fetch: ${response.status}`);
-        }
-
-        const repoData: CachedRepoData = await response.json();
-        setData(repoData);
-
-        // Update selectedLLMId if current one is not in new scores
-        if (repoData.scores && !repoData.scores[selectedLLMId]) {
-          setSelectedLLMId(getBestLLM(repoData.scores));
-        }
-
-        setState('success');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load repository data');
-        setState('error');
-      }
-    }
-
-    loadData();
-  }, [owner, name, initialData]);
-
-  if (state === 'loading') {
-    return <LoadingStateComponent />;
-  }
-
-  if (state === 'error') {
-    return <ErrorStateComponent message={error} />;
-  }
-
   if (!data) {
-    return <ErrorStateComponent message="No data available" />;
+    return <ErrorStateComponent message="Repository data not available" />;
   }
 
   const { repo, scores, releases, npmInfo, hasLlmsTxt, hasClaudeMd, hasAgentMd, sources } = data;

@@ -6,3 +6,9 @@ pages_build_output_dir = "dist"
 [[r2_buckets]]
 binding = "DATA_BUCKET"
 bucket_name = "aierastack-data"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aierastack-db"
+database_id = "68f2745c-b588-438d-b1e8-24d78ec402d3"
+migrations_dir = "migrations"
