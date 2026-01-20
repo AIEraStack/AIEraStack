@@ -172,57 +172,77 @@ const examples = [
         How We <span class="gradient-text">Score</span>
       </h2>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📡</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-indigo-400">Coverage</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">25%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            How well is this project covered in LLM training data?
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- AI-Related Dimensions (75% total) -->
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">📡</div>
+          <h3 class="text-base font-bold text-white mb-2 text-indigo-400">Coverage</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">25%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            How well is this project covered in LLM training data based on knowledge cutoff dates.
           </p>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📈</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-green-400">Adoption</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">20%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            Stars, downloads, and community adoption metrics.
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">🌐</div>
+          <h3 class="text-base font-bold text-white mb-2 text-pink-400">Language AI</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">20%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            How AI-friendly is the primary programming language for code generation.
           </p>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">📚</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-amber-400">Documentation</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            README quality, docs, examples, and changelog presence.
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">🤖</div>
+          <h3 class="text-base font-bold text-white mb-2 text-purple-400">AI Readiness</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">20%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            TypeScript support, llms.txt, Claude.md, and AI-friendly structure.
           </p>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">🤖</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-purple-400">AI Readiness</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
-            TypeScript support, llms.txt, and AI-friendly structure.
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">🧠</div>
+          <h3 class="text-base font-bold text-white mb-2 text-violet-400">Model Capability</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">10%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            LLM coding benchmarks: SWE-bench, HumanEval, debugging ability.
           </p>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">⚡</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-cyan-400">Momentum</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">15%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+        <!-- Non-AI Dimensions (25% total) -->
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">📚</div>
+          <h3 class="text-base font-bold text-white mb-2 text-amber-400">Documentation</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">10%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            README quality, docs directory, examples, and changelog.
+          </p>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">📈</div>
+          <h3 class="text-base font-bold text-white mb-2 text-green-400">Adoption</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">5%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
+            GitHub stars, npm weekly downloads, and forks.
+          </p>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">⚡</div>
+          <h3 class="text-base font-bold text-white mb-2 text-cyan-400">Momentum</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">5%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
             Recent commit activity and release frequency.
           </p>
         </div>
 
-        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
-          <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl">🔧</div>
-          <h3 class="text-lg font-bold text-white mb-3 text-pink-400">Maintenance</h3>
-          <div class="text-3xl font-mono font-bold text-white mb-4">10%</div>
-          <p class="text-sm text-[var(--text-muted)] leading-relaxed">
+        <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+          <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity text-5xl">🔧</div>
+          <h3 class="text-base font-bold text-white mb-2 text-rose-400">Maintenance</h3>
+          <div class="text-2xl font-mono font-bold text-white mb-2">5%</div>
+          <p class="text-xs text-[var(--text-muted)] leading-relaxed">
             Issue health and PR response time quality.
           </p>
         </div>
