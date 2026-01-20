@@ -18,7 +18,10 @@ if (parts.length !== 2) {
 const [owner, name] = parts;
 const initialData = await getOrFetchRepo(owner, name, env, getCachedRepo);
 
-const aiScore = initialData?.analysis?.overall ?? null;
+// Calculate best score from all LLMs (matching homepage logic)
+const aiScore = initialData?.scores
+  ? Math.max(...Object.values(initialData.scores).map(s => s.overall || 0))
+  : null;
 
 const pageTitle = initialData 
   ? aiScore
@@ -45,7 +48,7 @@ const softwareAppSchema = initialData ? {
   "url": `https://github.com/${owner}/${name}`,
   "aggregateRating": {
     "@type": "AggregateRating",
-    "ratingValue": initialData.analysis?.overall ?? 0,
+    "ratingValue": aiScore ?? 0,
     "bestRating": 100,
     "worstRating": 0,
     "ratingCount": initialData.repo.stars ?? 1
