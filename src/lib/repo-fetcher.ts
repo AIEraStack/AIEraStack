@@ -4,7 +4,7 @@
  */
 
 import curatedSource from '../config/curated-repos.json';
-import { saveRepoToD1 } from './d1-data-loader';
+import { saveRepoToD1, getCachedRepoWithStatus } from './d1-data-loader';
 import {
     checkLlmsTxt,
     fetchReleases,
@@ -106,6 +106,41 @@ function calculateAvgPRCloseTime(prs: any[]): number {
  * Fetch repository data from GitHub and calculate scores (without saving)
  * This is the core logic that can be reused by both SSR and batch update scripts
  */
+/**
+ * Smartly filter releases to keep size down while preserving history:
+ * 1. Keep the most recent 5 releases (context on current status)
+ * 2. Keep all major releases (x.0.0) to show long-term history
+ * 3. Cap at a reasonable limit (e.g., 20)
+ */
+function prioritizeReleases(releases: any[]): any[] {
+    const MAX_COUNT = 20;
+
+    if (!releases || releases.length <= MAX_COUNT) {
+        return releases || [];
+    }
+
+    // 1. Always keep the latest 5
+    const recent = releases.slice(0, 5);
+    const recentTags = new Set(recent.map(r => r.tagName));
+
+    // 2. Find major releases from the rest
+    // Major release: v1.0.0, 2.0.0 (ends in .0.0 or just .0 if strict semver isn't used)
+    const majorReleases = releases.filter(r => {
+        if (recentTags.has(r.tagName)) return false;
+        if (r.isPrerelease) return false;
+        // Match v?digit+.0.0
+        return /^v?\d+\.0\.0$/.test(r.tagName);
+    });
+
+    // 3. Combine and sort
+    const result = [...recent, ...majorReleases];
+
+    // Sort by publishedAt desc
+    result.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+
+    return result.slice(0, MAX_COUNT);
+}
+
 export async function fetchRepoData(
     owner: string,
     name: string,
@@ -160,7 +195,7 @@ export async function fetchRepoData(
         category: curatedMatch?.category || 'tooling-utilities',
         featured: curatedMatch?.featured || false,
         repo,
-        releases,
+        releases: prioritizeReleases(releases),
         hasLlmsTxt,
         hasClaudeMd,
         hasAgentMd,
@@ -200,27 +235,42 @@ export async function fetchAndSaveRepo(
 }
 
 /**
- * Get repo data - first check cache, then fetch if needed
+ * Get repo data - stale-while-revalidate pattern
+ * Returns cached data immediately (even if stale), triggers background refresh for stale data
  * This is the main function for SSR pages to use
  */
 export async function getOrFetchRepo(
     owner: string,
     name: string,
     env: FetcherEnv,
-    getCachedRepo: (owner: string, name: string, env: any) => Promise<CachedRepoData | null>
+    getCachedRepo: (owner: string, name: string, env: any) => Promise<CachedRepoData | null>,
+    ctx?: { waitUntil?: (promise: Promise<unknown>) => void }
 ): Promise<CachedRepoData | null> {
     // Find curated match for correct owner/name
     const curatedMatch = findCuratedRepo(owner, name);
     const lookupOwner = curatedMatch?.owner || owner;
     const lookupName = curatedMatch?.name || name;
 
-    // Check cache first
-    const cached = await getCachedRepo(lookupOwner, lookupName, { DB: env.DB });
-    if (cached) {
-        return cached;
+    // Check cache first with staleness info
+    const cacheResult = await getCachedRepoWithStatus(lookupOwner, lookupName, { DB: env.DB });
+
+    // If we have cached data (fresh or stale), return it immediately
+    if (cacheResult.data) {
+        // If stale, trigger background refresh (non-blocking)
+        if (cacheResult.isStale) {
+            const refreshPromise = fetchAndSaveRepo(lookupOwner, lookupName, curatedMatch, env)
+                .then(() => console.log(`Background refresh completed for ${owner}/${name}`))
+                .catch(err => console.error(`Background refresh failed for ${owner}/${name}:`, err));
+
+            // Use waitUntil if available (Cloudflare Workers), otherwise fire-and-forget
+            if (ctx?.waitUntil) {
+                ctx.waitUntil(refreshPromise);
+            }
+        }
+        return cacheResult.data;
     }
 
-    // Fetch from GitHub
+    // No cache exists - must fetch synchronously
     try {
         return await fetchAndSaveRepo(lookupOwner, lookupName, curatedMatch, env);
     } catch (error) {

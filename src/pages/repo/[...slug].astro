@@ -10,13 +10,13 @@ export const prerender = false;
 const { slug } = Astro.params;
 const parts = slug?.split('/') || [];
 const env = Astro.locals?.runtime?.env ?? {};
+const ctx = Astro.locals?.runtime?.ctx;
 
 if (parts.length !== 2) {
   return Astro.redirect('/');
 }
-
 const [owner, name] = parts;
-const initialData = await getOrFetchRepo(owner, name, env, getCachedRepo);
+const initialData = await getOrFetchRepo(owner, name, env, getCachedRepo, ctx);
 
 // Calculate best score from all LLMs (matching homepage logic)
 const aiScore = initialData?.scores
