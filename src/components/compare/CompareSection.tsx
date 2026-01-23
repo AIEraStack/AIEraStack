@@ -91,8 +91,8 @@ export function CompareSection({ repos }: CompareSectionProps) {
       </div>
 
       <div
-        className="grid gap-4"
-        style={{ gridTemplateColumns: `repeat(${Math.min(sortedRepos.length, 3)}, 1fr)` }}
+        className={`grid gap-4 grid-cols-1 ${sortedRepos.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'
+          }`}
       >
         {sortedRepos.map((repo) => {
           const repoData = repo.data;

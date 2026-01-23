@@ -124,7 +124,7 @@ export function RepoAnalyzer({ owner, name, initialData, defaultLLMId = 'gpt-5.2
         </div>
       )}
 
-      <div className="grid lg:grid-cols-[380px_1fr] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 lg:gap-8 items-start">
         <div className="glass-card rounded-2xl p-6 lg:sticky lg:top-24">
           <LLMComparison
             scores={scores}
@@ -150,7 +150,7 @@ export function RepoAnalyzer({ owner, name, initialData, defaultLLMId = 'gpt-5.2
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
             Detailed Insights
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <InsightItem
               positive={selectedScore.coverage?.details?.releaseCovered as boolean}
               label={

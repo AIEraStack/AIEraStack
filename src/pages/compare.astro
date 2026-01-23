@@ -133,7 +133,7 @@ const jsonLdSchemas = itemListSchema
     {repoSlugs.length === 0 && !reposParam && (
       <div class="glass-card p-8 rounded-2xl">
         <h2 class="text-xl font-bold text-white mb-4">Popular Comparisons</h2>
-        <div class="grid md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <a href="/compare?repos=facebook/react,vuejs/core,sveltejs/svelte" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5">
             <div class="font-medium text-white">Frontend Frameworks</div>
             <div class="text-sm text-[var(--text-muted)]">React vs Vue vs Svelte</div>

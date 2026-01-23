@@ -68,11 +68,10 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                   key={llm.id}
                   type="button"
                   onClick={() => setSelectedLLMId(llm.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    selectedLLMId === llm.id
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedLLMId === llm.id
                       ? 'text-white ring-2 ring-offset-2 ring-offset-slate-900'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
-                  }`}
+                    }`}
                   style={selectedLLMId === llm.id ? { backgroundColor: llm.color } : undefined}
                   aria-pressed={selectedLLMId === llm.id}
                 >
@@ -92,7 +91,7 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                   <p className="text-sm text-[var(--text-muted)]">{group.description}</p>
                 </div>
               </div>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {group.categories.map((cat) => (
                   <div
                     key={cat.category}
@@ -112,11 +111,10 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <span
-                                className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0 ${
-                                  i === 0
+                                className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0 ${i === 0
                                     ? 'bg-yellow-500/20 text-yellow-500'
                                     : 'text-[var(--text-muted)] bg-white/5'
-                                }`}
+                                  }`}
                               >
                                 {i + 1}
                               </span>
