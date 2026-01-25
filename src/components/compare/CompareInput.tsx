@@ -146,7 +146,7 @@ export function CompareInput({ defaultValue = '', repoSlugs = [] }: CompareInput
             {showSuggestions && suggestions.length > 0 && (
                 <div
                     ref={suggestionsRef}
-                    className="absolute top-full left-0 right-0 mt-1 bg-[#0f1016] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
+                    className="absolute top-full left-0 right-0 mt-1 bg-[#0f1016] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-[9999]"
                 >
                     {suggestions.map((slug, index) => (
                         <button

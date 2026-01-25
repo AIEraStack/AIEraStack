@@ -93,7 +93,7 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {group.categories.map((cat) => {
-                  const compareAllUrl = `/compare?repos=${cat.repos.map((r) => `${r.owner}/${r.name}`).join(',')}`;
+                  const compareAllUrl = `/compare/${cat.repos.map((r) => `${r.owner}/${r.name}`).join('~')}`;
                   return (
                   <div
                     key={cat.category}

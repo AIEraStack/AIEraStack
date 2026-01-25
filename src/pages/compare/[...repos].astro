@@ -1,0 +1,146 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCachedRepo, getRepoIndex } from '../../lib/d1-data-loader';
+import { getOrFetchRepo } from '../../lib/repo-fetcher';
+import { CompareSection } from '../../components/compare/CompareSection';
+import { CompareInput } from '../../components/compare/CompareInput';
+import { parseCompareUrl, buildCompareUrl } from '../../lib/url-utils';
+import type { CachedRepoData } from '../../lib/types';
+
+export const prerender = false;
+
+const { repos: reposPath } = Astro.params;
+const url = new URL(Astro.request.url);
+const env = Astro.locals?.runtime?.env ?? {};
+
+// Backwards compatibility: redirect query-string format to path-based format
+const reposParam = url.searchParams.get('repos') || '';
+if (reposParam) {
+  const repos = reposParam
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.includes('/'))
+    .slice(0, 5);
+  if (repos.length > 0) {
+    return Astro.redirect(buildCompareUrl(repos), 301);
+  }
+}
+
+// Parse repo slugs from path
+const repoSlugs = parseCompareUrl(reposPath).slice(0, 5);
+
+// Redirect to index if no valid repos
+if (repoSlugs.length === 0) {
+  return Astro.redirect('/compare', 302);
+}
+
+const repoDataPromises = repoSlugs.map(async (slug) => {
+  const [owner, name] = slug.split('/');
+  const data = await getOrFetchRepo(owner, name, env, getCachedRepo);
+  return { slug, owner, name, data };
+});
+
+const repos = await Promise.all(repoDataPromises);
+
+// Get repo slugs for autocomplete (sorted by score, top 1000)
+const index = await getRepoIndex(env);
+const autocompleteSlugs = Object.values(index.repos)
+  .sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0))
+  .slice(0, 1000)
+  .map(r => `${r.owner}/${r.name}`);
+
+const compareRepos = repos.map(r => ({
+  slug: r.slug,
+  owner: r.owner,
+  name: r.name,
+  initialData: r.data ?? null,
+}));
+
+const titleNames = compareRepos.map(r => r.name).filter(Boolean);
+const pageTitle = `Compare ${titleNames.join(' vs ')} - AI Era Stack`;
+const compareDescription = `Compare ${titleNames.join(' vs ')} AI coding compatibility. See which library works best with Cursor, Codex & Claude.`;
+
+// Generate ItemList JSON-LD for compare page (shows libraries being compared)
+const itemListSchema = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": `Compare ${titleNames.join(' vs ')}`,
+  "description": compareDescription,
+  "numberOfItems": compareRepos.length,
+  "itemListElement": compareRepos.map((repo, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "name": repo.name,
+    "url": `https://aierastack.com/repo/${repo.slug}`
+  }))
+};
+
+// Generate BreadcrumbList schema
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://aierastack.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Compare",
+      "item": "https://aierastack.com/compare"
+    }
+  ]
+};
+
+// Convert comma-separated input to tilde-separated for defaultValue display
+const defaultInputValue = repoSlugs.join(', ');
+---
+
+<Layout title={pageTitle} description={compareDescription} noDefaultJsonLd={true}>
+  <script type="application/ld+json" set:html={JSON.stringify(itemListSchema)} />
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
+      ← Back to search
+    </a>
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2">Compare Libraries</h1>
+      <p class="text-[var(--text-muted)]">See which libraries have better AI support across different models</p>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl mb-8 overflow-visible relative z-10">
+      <label class="block text-sm font-medium text-white mb-2">
+        Enter repositories to compare (comma-separated)
+      </label>
+      <div class="flex gap-3">
+        <CompareInput defaultValue={defaultInputValue} repoSlugs={autocompleteSlugs} client:load />
+        <button
+          type="button"
+          id="compare-btn"
+          class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+        >
+          Compare
+        </button>
+      </div>
+      <p class="text-xs text-[var(--text-muted)] mt-2">
+        Format: owner/repo — max 5 repositories
+      </p>
+    </div>
+
+    <CompareSection repos={compareRepos} client:load />
+  </div>
+
+  <script>
+    document.getElementById('compare-btn')?.addEventListener('click', () => {
+      const input = document.querySelector('input[name="repos"]') as HTMLInputElement;
+      if (!input) return;
+      const repos = input.value.split(',').map(s => s.trim()).filter(s => s.includes('/'));
+      const url = repos.length > 0 ? `/compare/${repos.join('~')}` : '/compare';
+      window.location.href = url;
+    });
+  </script>
+</Layout>

@@ -1,0 +1,119 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getRepoIndex } from '../../lib/d1-data-loader';
+import { CompareInput } from '../../components/compare/CompareInput';
+import { buildCompareUrl } from '../../lib/url-utils';
+
+export const prerender = false;
+
+const url = new URL(Astro.request.url);
+const env = Astro.locals?.runtime?.env ?? {};
+
+// Backwards compatibility: redirect query-string format to path-based format
+const reposParam = url.searchParams.get('repos') || '';
+if (reposParam) {
+  const repos = reposParam
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.includes('/'))
+    .slice(0, 5);
+  if (repos.length > 0) {
+    return Astro.redirect(buildCompareUrl(repos), 301);
+  }
+}
+
+// Get repo slugs for autocomplete (sorted by score, top 1000)
+const index = await getRepoIndex(env);
+const autocompleteSlugs = Object.values(index.repos)
+  .sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0))
+  .slice(0, 1000)
+  .map(r => `${r.owner}/${r.name}`);
+
+const pageTitle = 'Compare Libraries - AI Era Stack';
+const compareDescription = 'Compare libraries for AI coding compatibility. Find which frameworks work best with Cursor, Codex & Claude.';
+
+// Generate BreadcrumbList schema
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://aierastack.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Compare",
+      "item": "https://aierastack.com/compare"
+    }
+  ]
+};
+---
+
+<Layout title={pageTitle} description={compareDescription}>
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <a href="/" class="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
+      ← Back to search
+    </a>
+
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-white mb-2">Compare Libraries</h1>
+      <p class="text-[var(--text-muted)]">See which libraries have better AI support across different models</p>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl mb-8 overflow-visible relative z-10">
+      <label class="block text-sm font-medium text-white mb-2">
+        Enter repositories to compare (comma-separated)
+      </label>
+      <div class="flex gap-3">
+        <CompareInput defaultValue="" repoSlugs={autocompleteSlugs} client:load />
+        <button
+          type="button"
+          id="compare-btn"
+          class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+        >
+          Compare
+        </button>
+      </div>
+      <p class="text-xs text-[var(--text-muted)] mt-2">
+        Format: owner/repo — max 5 repositories
+      </p>
+    </div>
+
+    <div class="glass-card p-8 rounded-2xl">
+      <h2 class="text-xl font-bold text-white mb-4">Popular Comparisons</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <a href="/compare/facebook/react~vuejs/core~sveltejs/svelte" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5">
+          <div class="font-medium text-white">Frontend Frameworks</div>
+          <div class="text-sm text-[var(--text-muted)]">React vs Vue vs Svelte</div>
+        </a>
+        <a href="/compare/vercel/next.js~remix-run/remix~withastro/astro" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5">
+          <div class="font-medium text-white">Meta Frameworks</div>
+          <div class="text-sm text-[var(--text-muted)]">Next.js vs Remix vs Astro</div>
+        </a>
+        <a href="/compare/prisma/prisma~drizzle-team/drizzle-orm" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5">
+          <div class="font-medium text-white">ORMs</div>
+          <div class="text-sm text-[var(--text-muted)]">Prisma vs Drizzle</div>
+        </a>
+        <a href="/compare/pmndrs/zustand~TanStack/query~reduxjs/redux-toolkit" class="p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5">
+          <div class="font-medium text-white">State Management</div>
+          <div class="text-sm text-[var(--text-muted)]">Zustand vs React Query vs Redux</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('compare-btn')?.addEventListener('click', () => {
+      const input = document.querySelector('input[name="repos"]') as HTMLInputElement;
+      if (!input) return;
+      const repos = input.value.split(',').map(s => s.trim()).filter(s => s.includes('/'));
+      const url = repos.length > 0 ? `/compare/${repos.join('~')}` : '/compare';
+      window.location.href = url;
+    });
+  </script>
+</Layout>

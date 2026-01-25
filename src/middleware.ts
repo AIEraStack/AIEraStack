@@ -6,6 +6,7 @@ const CACHE_CONFIG = {
   '/': { sMaxAge: 300, staleWhileRevalidate: 3600 }, // 5m edge, 1h stale
   '/repo/': { sMaxAge: 300, staleWhileRevalidate: 3600 }, // 5m edge, 1h stale
   '/compare': { sMaxAge: 300, staleWhileRevalidate: 3600 }, // 5m edge, 1h stale
+  '/compare/': { sMaxAge: 300, staleWhileRevalidate: 3600 }, // 5m edge, 1h stale
 };
 
 const BROWSER_MAX_AGE = 60; // 1 minute browser cache for all HTML
@@ -21,8 +22,8 @@ function getCacheConfig(pathname: string): { sMaxAge: number; staleWhileRevalida
     return CACHE_CONFIG['/repo/'];
   }
   
-  // Compare page (with or without query)
-  if (pathname === '/compare' || pathname.startsWith('/compare?')) {
+  // Compare page (with or without path)
+  if (pathname === '/compare' || pathname.startsWith('/compare/')) {
     return CACHE_CONFIG['/compare'];
   }
   
