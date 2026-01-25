@@ -92,22 +92,34 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {group.categories.map((cat) => (
+                {group.categories.map((cat) => {
+                  const compareAllUrl = `/compare?repos=${cat.repos.map((r) => `${r.owner}/${r.name}`).join(',')}`;
+                  return (
                   <div
                     key={cat.category}
-                    className="glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300"
+                    className="group/card glass-card rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300"
                   >
-                    <h4 className="text-lg font-bold text-white mb-4">
-                      {cat.meta.label}
-                    </h4>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-bold text-white">
+                        {cat.meta.label}
+                      </h4>
+                      <a
+                        href={compareAllUrl}
+                        className="opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 px-2.5 py-1 text-xs font-medium bg-white/10 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-transparent hover:border-cyan-500/30 rounded-md transition-all duration-200"
+                        title={`Compare all ${cat.repos.length} repos`}
+                      >
+                        Compare
+                      </a>
+                    </div>
                     <div className="space-y-2">
                       {cat.repos.map((repo, i) => {
                         const score = getRepoScore(repo, selectedLLMId);
+                        const repoUrl = `/repo/${repo.owner}/${repo.name}`;
                         return (
                           <a
                             key={`${repo.owner}/${repo.name}`}
-                            href={`/repo/${repo.owner}/${repo.name}`}
-                            className="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
+                            href={repoUrl}
+                            className="group/repo flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors"
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <span
@@ -119,7 +131,7 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                                 {i + 1}
                               </span>
                               <span
-                                className="text-sm text-[var(--text-primary)] font-medium group-hover:text-cyan-400 transition-colors truncate"
+                                className="text-sm text-[var(--text-primary)] font-medium group-hover/repo:text-cyan-400 transition-colors truncate"
                                 title={`${repo.owner}/${repo.name}`}
                               >
                                 <span className="text-slate-500">{repo.owner}/</span>
@@ -140,7 +152,7 @@ export function CuratedStacks({ groups, defaultLLMId }: CuratedStacksProps) {
                       })}
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           ))}
