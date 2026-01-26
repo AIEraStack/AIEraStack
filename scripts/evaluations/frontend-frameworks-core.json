@@ -1,0 +1,186 @@
+{
+  "id": "fe-frameworks-core-eval-2026",
+  "repos": [
+    "withastro/astro",
+    "preactjs/preact",
+    "vuejs/core",
+    "facebook/react",
+    "angular/angular"
+  ],
+  "category": "frontend-frameworks-core",
+  "categoryLabel": "Core Frameworks",
+  "summary": "The 2026 frontend landscape is defined by the convergence of server-side performance and reactive DX, with Astro leading the shift toward content-driven multi-framework architectures. While React 19 stabilizes the use of Server Components and the new React Compiler, rivals like Angular and Vue have pivoted heavily toward Signal-based reactivity to eliminate legacy bottlenecks. This comparison highlights a maturing ecosystem where 'all-in-one' frameworks are increasingly judged by their AI-assisted development efficiency and zero-bundle-size potential.",
+  "recommendations": {
+    "forNewProjects": {
+      "repo": "withastro/astro",
+      "reason": "Astro's Content Layer API and 'Islands' architecture provide the most scalable foundation for modern, performance-first websites, allowing teams to mix frameworks as needed while maintaining a zero-JS baseline. Its automatic optimization of images and assets significantly reduces the initial technical debt associated with core web vitals."
+    },
+    "forAICoding": {
+      "repo": "withastro/astro",
+      "reason": "Astro's highly structured component syntax and clear separation of frontmatter (server) and template (client) make it exceptionally easy for LLMs to generate correct, isolated code blocks. Its explicit 'client:' directives provide clear intent that AI tools like Cursor and Copilot can leverage to minimize hydrate-related bugs."
+    },
+    "forMigrations": {
+      "repo": "facebook/react",
+      "reason": "Despite newer competition, React's massive ecosystem provides the most robust migration path via codemods and community-driven bridges (like million.js or preact-compat). React 19's focus on stabilizing backward compatibility for Server Components makes it the safest long-term bet for large legacy codebases."
+    }
+  },
+  "rankings": [
+    {
+      "repoSlug": "withastro/astro",
+      "rank": 1,
+      "verdict": "highly-recommended",
+      "strengths": [
+        "Server Islands architecture allows for high-performance static sites with dynamic, asynchronously loaded components that don't block initial paint.",
+        "The Content Layer API provides a unified, type-safe way to fetch data from any source (Markdown, APIs, CMS) directly into components.",
+        "Framework-agnostic design enables the use of React, Vue, or Svelte components within the same project, future-proofing against library shifts."
+      ],
+      "weaknesses": [
+        "Complexity increases when managing state across multiple different framework islands within a single page.",
+        "Not ideal for highly interactive, complex single-page 'dashboards' compared to pure SPA frameworks."
+      ],
+      "bestFor": "Content-rich websites, documentation portals, and e-commerce platforms where SEO and performance are critical and multi-framework support is desired."
+    },
+    {
+      "repoSlug": "preactjs/preact",
+      "rank": 2,
+      "verdict": "highly-recommended",
+      "strengths": [
+        "Ultra-lightweight footprint (3kB) significantly reduces TBT (Total Blocking Time) and makes it perfect for performance-constrained environments.",
+        "Native Signals implementation provides a more granular and performant reactivity model than standard React hooks, avoiding unnecessary re-renders.",
+        "High compatibility with the React ecosystem allows developers to use most React libraries while benefiting from a smaller bundle size."
+      ],
+      "weaknesses": [
+        "Small core team compared to Meta or Google, leading to slower adoption of bleeding-edge web standards.",
+        "Some edge-case React libraries require complex aliasing or workarounds to function correctly in Preact."
+      ],
+      "bestFor": "Performance-critical widgets, embeddable tools, and projects where bundle size is the primary constraint without sacrificing React-like DX."
+    },
+    {
+      "repoSlug": "vuejs/core",
+      "rank": 3,
+      "verdict": "recommended",
+      "strengths": [
+        "Vue 3.5's refined Composition API and reactive props destructuring offer the most intuitive developer experience in the modern framework tier.",
+        "Vapor Mode (experimental/upcoming) promises a solid path to no-Virtual-DOM performance for high-load components.",
+        "The most cohesive first-party ecosystem (Pinia, Vue Router, Vitest) ensures high internal consistency and lower configuration overhead."
+      ],
+      "weaknesses": [
+        "Fragmented ecosystem between Options API and Composition API can occasionally confuse AI code generators or junior developers.",
+        "Corporate adoption in the US lags behind React and Angular, potentially limiting job market opportunities in certain regions."
+      ],
+      "bestFor": "Progressive web apps, medium-to-large scale enterprise frontends, and teams prioritizing developer productivity and clean code structure."
+    },
+    {
+      "repoSlug": "facebook/react",
+      "rank": 4,
+      "verdict": "recommended",
+      "strengths": [
+        "React 19's new Compiler automatically optimizes re-renders, significantly reducing the need for manual useMemo and useCallback boilerplate.",
+        "Unrivaled ecosystem with the largest selection of UI kits (Shadcn, MUI), state management tools, and testing frameworks available.",
+        "Extensive LLM training data coverage ensures that AI tools generate the most accurate and bug-free code for React compared to any other framework."
+      ],
+      "weaknesses": [
+        "Lowest AI Readiness score (40) reflects a lack of LLM-specific documentation like llms.txt compared to more modern competitors.",
+        "Increasing architectural complexity with Server Components and Actions creates a steep learning curve for developers moving from traditional SPAs."
+      ],
+      "bestFor": "Large-scale enterprise applications, cross-platform development (React Native), and projects where hiring from a massive talent pool is a priority."
+    },
+    {
+      "repoSlug": "angular/angular",
+      "rank": 5,
+      "verdict": "recommended",
+      "strengths": [
+        "The shift to Signals and Zoneless hydration in versions 18/19 has drastically improved runtime performance and simplified the change detection model.",
+        "Strict, opinionated architecture with built-in dependency injection makes it the gold standard for large-scale enterprise maintainability.",
+        "Excellent first-party support for SSR, Internationalization, and PWA features out of the box without third-party dependencies."
+      ],
+      "weaknesses": [
+        "Documentation quality (60) has struggled to keep pace with the rapid architectural shifts from Modules/Zone.js to Standalone/Signals.",
+        "The most verbose syntax among core frameworks, which can lead to higher token usage and occasional hallucinations in AI code generation."
+      ],
+      "bestFor": "Large-scale enterprise 'God-apps', regulated industries requiring strict patterns, and teams that prefer a complete, batteries-included framework."
+    }
+  ],
+  "dimensionInsights": [
+    {
+      "dimension": "coverage",
+      "dimensionLabel": "LLM Training Coverage",
+      "winner": "facebook/react",
+      "insight": "React dominates LLM training data due to its massive historical footprint; however, AI models often struggle with the nuances of the very latest React 19 Server Component patterns vs. legacy Hook patterns. Astro, Vue, and Preact share a high score of 87, reflecting their maturity and the high volume of high-quality documentation available for their modern APIs.",
+      "comparison": [
+        { "repo": "facebook/react", "score": 87, "note": "Unrivaled volume of training data; expert-level AI support for legacy and current hooks." },
+        { "repo": "withastro/astro", "score": 87, "note": "Excellent coverage of the .astro syntax and island architecture in recent model updates." },
+        { "repo": "preactjs/preact", "score": 87, "note": "Benefits from React coverage plus specific documentation on Signals and size optimizations." },
+        { "repo": "vuejs/core", "score": 87, "note": "Strong representation of the Composition API and SFC patterns in all major LLMs." },
+        { "repo": "angular/angular", "score": 67, "note": "Lower score due to recent massive architectural shifts (Signals/Standalone) not fully reflected in older training sets." }
+      ]
+    },
+    {
+      "dimension": "aiReadiness",
+      "dimensionLabel": "AI Coding Readiness",
+      "winner": "withastro/astro",
+      "insight": "Astro, Preact, and Angular lead here by proactively adopting AI-friendly documentation structures. Astro's clear separation of concerns helps LLMs generate context-aware code. React's low score of 40 is a significant outlier, indicating a lack of AI-optimized metadata (like llms.txt) which forces AI tools to rely on general web scraping rather than structured guidance.",
+      "comparison": [
+        { "repo": "withastro/astro", "score": 70, "note": "Explicit component structure and island markers are highly legible for AI context windows." },
+        { "repo": "preactjs/preact", "score": 70, "note": "Simple, small API surface area makes for fewer AI hallucinations and more reliable code generation." },
+        { "repo": "angular/angular", "score": 70, "note": "The CLI-centric nature and strict types provide clear 'rails' for AI agents to follow during generation." },
+        { "repo": "vuejs/core", "score": 55, "note": "SFC structure is AI-friendly, but the duality of Options/Composition API can still confuse models." },
+        { "repo": "facebook/react", "score": 40, "note": "Lacks specific AI-targeting docs; architectural complexity often leads to AI-generated 'hook soup'." }
+      ]
+    },
+    {
+      "dimension": "documentation",
+      "dimensionLabel": "Documentation Quality",
+      "winner": "facebook/react",
+      "insight": "React's documentation remains the industry benchmark for clarity and interactive learning. Astro follows closely with a 'learn-by-doing' approach that excels in explaining its unique island model. Angular and Vue lag behind slightly due to the ongoing transition periods between their legacy and modern reactivity APIs, which can result in fragmented search results.",
+      "comparison": [
+        { "repo": "facebook/react", "score": 90, "note": "The 'react.dev' site is world-class, featuring deep conceptual dives and interactive sandboxes." },
+        { "repo": "withastro/astro", "score": 75, "note": "Very strong tutorial-based docs; excellent documentation for the Content Layer and integrations." },
+        { "repo": "preactjs/preact", "score": 65, "note": "Concise and effective, though often assumes the reader is already familiar with React concepts." },
+        { "repo": "vuejs/core", "score": 60, "note": "Good core docs, but community tutorials are often split between Vue 2 and various Vue 3 styles." },
+        { "repo": "angular/angular", "score": 60, "note": "Comprehensive but dense; finding information on the 'new' way (Signals) can be challenging." }
+      ]
+    },
+    {
+      "dimension": "adoption",
+      "dimensionLabel": "Industry Adoption",
+      "winner": "facebook/react",
+      "insight": "React remains the default choice for the vast majority of the industry, boasting a 100/100 adoption score. Angular's 98/100 reflects its absolute dominance in the enterprise and banking sectors. Astro and Preact, while lower, show impressive growth as specialized alternatives for performance-first and content-heavy applications respectively.",
+      "comparison": [
+        { "repo": "facebook/react", "score": 100, "note": "The industry standard; most libraries, tools, and talent are centered here." },
+        { "repo": "angular/angular", "score": 98, "note": "Pervasive in large corporations; massive job market and long-term stability guarantees." },
+        { "repo": "vuejs/core", "score": 97, "note": "Extremely popular in Asian markets and among solo developers/startups for its balance of features." },
+        { "repo": "preactjs/preact", "score": 93, "note": "High invisible adoption; used by major sites like Etsy and IKEA for performance critical paths." },
+        { "repo": "withastro/astro", "score": 90, "note": "Rapidly becoming the top choice for modern marketing sites and developer portfolios." }
+      ]
+    },
+    {
+      "dimension": "momentum",
+      "dimensionLabel": "Development Momentum",
+      "winner": "angular/angular",
+      "insight": "Angular and React share the top spot for momentum, reflecting the massive engineering efforts behind React 19 and Angular's 'Renaissance' (Signals, Deferrable Views). Astro follows closely with its constant stream of innovative features like Server Islands, while Preact maintains a stable, slower-paced focus on core refinement.",
+      "comparison": [
+        { "repo": "angular/angular", "score": 70, "note": "Unprecedented feature velocity in the last 18 months; successfully reinventing the framework." },
+        { "repo": "facebook/react", "score": 70, "note": "Massive R&D into the React Compiler and seamless server/client integration." },
+        { "repo": "withastro/astro", "score": 65, "note": "High innovation frequency; leading the industry's shift toward multi-framework architectures." },
+        { "repo": "vuejs/core", "score": 55, "note": "Steady progress; focus on performance (Vapor Mode) rather than radical feature expansion." },
+        { "repo": "preactjs/preact", "score": 50, "note": "Deliberately conservative; focuses on stability and size over feature churn." }
+      ]
+    },
+    {
+      "dimension": "maintenance",
+      "dimensionLabel": "Maintenance Health",
+      "winner": "angular/angular",
+      "insight": "Angular leads in maintenance health with a 90/100 score, driven by Google's strict internal usage requirements and long-term support (LTS) policies. React, Vue, and Astro all maintain a very healthy 85/100, indicating quick security patching and high-quality PR reviews, though they rely more on community and corporate-coalition models than Google's single-vendor oversight.",
+      "comparison": [
+        { "repo": "angular/angular", "score": 90, "note": "Backed by Google; rigorous testing against thousands of internal apps ensures zero regressions." },
+        { "repo": "facebook/react", "score": 85, "note": "Meta-backed; high-velocity maintenance but sometimes prioritizes internal needs over community PRs." },
+        { "repo": "vuejs/core", "score": 85, "note": "Well-funded via Open Collective and corporate sponsors; highly responsive core team." },
+        { "repo": "withastro/astro", "score": 85, "note": "Vibrant, VC-backed company with a very active community and high-quality core maintainers." },
+        { "repo": "preactjs/preact", "score": 80, "note": "Lean and reliable; maintenance is focused on bug fixes and compatibility stability." }
+      ]
+    }
+  ],
+  "modelUsed": "claude-3-5-sonnet",
+  "generatedAt": "2026-01-26T14:30:00Z"
+}

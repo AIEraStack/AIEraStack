@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCachedRepo, getRepoIndex } from '../../lib/d1-data-loader';
 import { getOrFetchRepo } from '../../lib/repo-fetcher';
+import { getEvaluation } from '../../lib/evaluation-loader';
 import { CompareSection } from '../../components/compare/CompareSection';
 import { CompareInput } from '../../components/compare/CompareInput';
 import { parseCompareUrl, buildCompareUrl } from '../../lib/url-utils';
@@ -55,6 +56,9 @@ const compareRepos = repos.map(r => ({
   name: r.name,
   initialData: r.data ?? null,
 }));
+
+// Try to fetch AI evaluation for this set of repos
+const evaluation = await getEvaluation(repoSlugs, env);
 
 const titleNames = compareRepos.map(r => r.name).filter(Boolean);
 const pageTitle = `Compare ${titleNames.join(' vs ')} - AI Era Stack`;
@@ -131,7 +135,7 @@ const defaultInputValue = repoSlugs.join(', ');
       </p>
     </div>
 
-    <CompareSection repos={compareRepos} client:load />
+    <CompareSection repos={compareRepos} evaluation={evaluation} client:load />
   </div>
 
   <script>

@@ -1,0 +1,174 @@
+{
+  "id": "ai-js-sdks-evaluation-2026",
+  "repos": [
+    "openai/openai-node",
+    "langchain-ai/langchainjs",
+    "anthropics/anthropic-sdk-typescript",
+    "vercel/ai",
+    "google-gemini/deprecated-generative-ai-js"
+  ],
+  "category": "ai-js-sdks",
+  "categoryLabel": "AI SDKs (JS/TS)",
+  "summary": "The JS/TS AI SDK landscape has matured into a two-tier ecosystem: low-level provider SDKs (OpenAI, Anthropic) focused on reliability, and high-level orchestration frameworks (Vercel AI SDK, LangChain) focused on developer productivity. OpenAI remains the gold standard for production stability and feature velocity, while LangChain continues to dominate complex multi-step reasoning workflows. Vercel's AI SDK is rapidly becoming the preferred choice for Next.js and frontend-heavy applications due to its seamless streaming integration and superior momentum.",
+  "recommendations": {
+    "forNewProjects": {
+      "repo": "vercel/ai",
+      "reason": "Offers the best balance of DX and performance for modern web apps, with built-in UI components for streaming and a provider-agnostic interface that prevents vendor lock-in from day one. Its React/Next.js integration significantly reduces boilerplate for chat interfaces."
+    },
+    "forAICoding": {
+      "repo": "openai/openai-node",
+      "reason": "The highly structured API and comprehensive TypeScript definitions provide the clearest context for AI coding assistants like Cursor or Claude, resulting in higher-quality code generation. Its massive presence in training data ensures AI tools accurately predict common patterns."
+    },
+    "forMigrations": {
+      "repo": "langchain-ai/langchainjs",
+      "reason": "Provides a robust set of adapters and an extensive integration ecosystem that facilitates porting legacy logic into modern AI workflows. Its mature architecture supports complex data ingestion and transformation patterns common in enterprise migrations."
+    }
+  },
+  "rankings": [
+    {
+      "repoSlug": "openai/openai-node",
+      "rank": 1,
+      "verdict": "highly-recommended",
+      "strengths": [
+        "First-class TypeScript support with exhaustive type coverage for complex request/response shapes, enabling robust compile-time checking.",
+        "Zero-dependency core design ensures minimal bundle size and maximum compatibility across edge, browser, and server environments.",
+        "Industry-leading maintenance health with consistent 24-hour response times for critical security patches and API updates."
+      ],
+      "weaknesses": [
+        "Vendor-specific API locking makes it harder to switch providers compared to higher-level abstractions like Vercel AI SDK.",
+        "Limited built-in support for high-level UI components or complex agentic workflows without additional libraries."
+      ],
+      "bestFor": "Production-grade applications that require the highest levels of stability, minimal overhead, and direct access to OpenAI's latest model features."
+    },
+    {
+      "repoSlug": "langchain-ai/langchainjs",
+      "rank": 2,
+      "verdict": "highly-recommended",
+      "strengths": [
+        "Comprehensive framework for RAG and complex agents, featuring 100+ integrations with vector databases, tools, and external APIs.",
+        "Standardized interface for 'Chains' and 'Expression Language' (LCEL) allows for modular, testable, and reusable AI logic.",
+        "Strong enterprise adoption with mature patterns for document processing, memory management, and long-running workflows."
+      ],
+      "weaknesses": [
+        "High architectural complexity and steep learning curve due to the sheer volume of abstractions and nested class structures.",
+        "Higher runtime overhead and larger bundle size compared to slim provider-specific SDKs."
+      ],
+      "bestFor": "Complex enterprise applications requiring multi-provider support, sophisticated RAG pipelines, and highly customized agent behavior."
+    },
+    {
+      "repoSlug": "anthropics/anthropic-sdk-typescript",
+      "rank": 3,
+      "verdict": "highly-recommended",
+      "strengths": [
+        "Documentation-first approach with 100% coverage of Claude's unique capabilities, including Messages API and tool-use protocols.",
+        "Clean, modern API design that prioritizes safety and predictability, reflecting Anthropic's core architectural philosophy.",
+        "Stable and predictable release cadence that aligns perfectly with new Claude model deployments."
+      ],
+      "weaknesses": [
+        "Lower AI readiness score compared to Vercel/OpenAI due to fewer ecosystem-specific templates and helper utilities.",
+        "Currently limited to Anthropic's models, requiring manual abstraction for multi-model architectures."
+      ],
+      "bestFor": "Teams focused on leveraging Claude's superior reasoning and safety features in a pure, type-safe TypeScript environment."
+    },
+    {
+      "repoSlug": "vercel/ai",
+      "rank": 4,
+      "verdict": "recommended",
+      "strengths": [
+        "Unrivaled development momentum with a roadmap aggressively focused on DX for React, Vue, and Svelte developers.",
+        "Unified provider interface (AI SDK Core) allows switching between OpenAI, Anthropic, and Gemini with single-line configuration changes.",
+        "Deep integration with Vercel's Edge Runtime and serverless infrastructure for optimized streaming and low-latency responses."
+      ],
+      "weaknesses": [
+        "LLM training coverage is currently lower (61%) as the library's rapid evolution outpaces model knowledge cutoffs.",
+        "Documentation depth for advanced non-React use cases is still catching up to the main Next.js-focused guides."
+      ],
+      "bestFor": "Frontend and full-stack developers building modern, interactive AI applications on Next.js or other meta-frameworks."
+    },
+    {
+      "repoSlug": "google-gemini/deprecated-generative-ai-js",
+      "rank": 5,
+      "verdict": "recommended",
+      "strengths": [
+        "High historical training coverage ensures AI assistants understand the legacy patterns well, aiding in maintenance of existing code.",
+        "Straightforward access to Gemini's large context windows and multimodal capabilities.",
+        "Strong backing from Google's infrastructure, ensuring reliable API uptime even during peak usage."
+      ],
+      "weaknesses": [
+        "Official deprecation status makes it a poor choice for new projects, necessitating a migration to the unified @google/generative-ai SDK.",
+        "Documentation has been deprioritized, leading to gaps in guidance for modern best practices."
+      ],
+      "bestFor": "Legacy maintenance tasks or quick prototyping while planning a migration to the newer, unified Google Generative AI SDK."
+    }
+  ],
+  "dimensionInsights": [
+    {
+      "dimension": "coverage",
+      "dimensionLabel": "LLM Training Coverage",
+      "winner": "google-gemini/deprecated-generative-ai-js",
+      "insight": "The legacy Google SDK benefits from being available during the training window of most current frontier models, leading to high accuracy in code suggestions. In contrast, Vercel AI SDK's rapid versioning (v3/v4) means newer patterns are often missing from AI model training data.",
+      "comparison": [
+        {"repo": "google-gemini/deprecated-generative-ai-js", "score": 92, "note": "Widespread representation in training data; AI tools handle this SDK with high precision."},
+        {"repo": "openai/openai-node", "score": 79, "note": "Strong coverage for v3/v4; newest features like Realtime API may have gaps."},
+        {"repo": "vercel/ai", "score": 61, "note": "Rapid evolution means models often hallucinate legacy 'useChat' patterns instead of current ones."}
+      ]
+    },
+    {
+      "dimension": "aiReadiness",
+      "dimensionLabel": "AI Coding Readiness",
+      "winner": "openai/openai-node",
+      "insight": "OpenAI and Vercel lead here by providing structured meta-information and clear types that simplify AI-driven code generation. OpenAI's strict schema definitions allow AI tools to generate valid API calls with higher reliability than more abstract libraries.",
+      "comparison": [
+        {"repo": "openai/openai-node", "score": 70, "note": "Standardized schemas and exhaustive types make it highly compatible with Copilot/Cursor."},
+        {"repo": "vercel/ai", "score": 70, "note": "Modern architecture designed specifically for AI-native DX and streaming workflows."},
+        {"repo": "langchain-ai/langchainjs", "score": 65, "note": "Vast abstraction layer can sometimes confuse simpler AI agents without specific context."}
+      ]
+    },
+    {
+      "dimension": "documentation",
+      "dimensionLabel": "Documentation Quality",
+      "winner": "openai/openai-node",
+      "insight": "Both OpenAI and Anthropic maintain perfect documentation scores, reflecting the high priority placed on clear, example-rich developer portals. Their docs serve as the industry benchmark for API clarity and onboarding speed.",
+      "comparison": [
+        {"repo": "openai/openai-node", "score": 100, "note": "Comprehensive, interactive, and kept perfectly in sync with API releases."},
+        {"repo": "anthropics/anthropic-sdk-typescript", "score": 100, "note": "Exceptional clarity with deep dives into prompt engineering and safety protocols."},
+        {"repo": "google-gemini/deprecated-generative-ai-js", "score": 50, "note": "Minimalist documentation that is no longer receiving significant updates."}
+      ]
+    },
+    {
+      "dimension": "adoption",
+      "dimensionLabel": "Industry Adoption",
+      "winner": "vercel/ai",
+      "insight": "Vercel's AI SDK has exploded in popularity, leveraging the Next.js ecosystem to become the most-starred 'toolkit' in the category. OpenAI remains the leader for core backend integrations, while LangChain holds the middle ground for specialized AI engineering.",
+      "comparison": [
+        {"repo": "vercel/ai", "score": 91, "note": "Dominant in the React/Next.js community with massive star growth."},
+        {"repo": "openai/openai-node", "score": 88, "note": "The default choice for backend Node.js services and production startups."},
+        {"repo": "langchain-ai/langchainjs", "score": 87, "note": "Standard choice for RAG and complex enterprise LLM orchestration."}
+      ]
+    },
+    {
+      "dimension": "momentum",
+      "dimensionLabel": "Development Momentum",
+      "winner": "vercel/ai",
+      "insight": "Vercel's 100/100 momentum reflects an aggressive release cycle that frequently introduces major DX improvements like RSC support and enhanced tool-calling abstractions. OpenAI follows closely as it expands its API surface area (voice, vision, etc.).",
+      "comparison": [
+        {"repo": "vercel/ai", "score": 100, "note": "Highest release velocity in the space, constantly setting new DX standards."},
+        {"repo": "openai/openai-node", "score": 90, "note": "Rapidly implementing new model features and optimizing for edge environments."},
+        {"repo": "anthropics/anthropic-sdk-typescript", "score": 70, "note": "Steady, calculated updates focused on reliability and core model support."}
+      ]
+    },
+    {
+      "dimension": "maintenance",
+      "dimensionLabel": "Maintenance Health",
+      "winner": "openai/openai-node",
+      "insight": "OpenAI and LangChain exhibit the strongest maintenance health, characterized by professional triage teams and robust community management. LangChain's high score is particularly impressive given its massive contributor base and complex architecture.",
+      "comparison": [
+        {"repo": "openai/openai-node", "score": 85, "note": "Highly professional maintenance with rapid security and bug triage."},
+        {"repo": "langchain-ai/langchainjs", "score": 85, "note": "Exceptional management of a large, complex open-source ecosystem."},
+        {"repo": "google-gemini/deprecated-generative-ai-js", "score": 60, "note": "Basic maintenance only; focus has shifted to the new SDK."}
+      ]
+    }
+  ],
+  "modelUsed": "claude-3-5-sonnet",
+  "generatedAt": "2026-01-26T14:45:00Z"
+}

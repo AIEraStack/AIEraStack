@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { LLM_CONFIGS, getLLMById } from '../../lib/llm-configs';
 import type { CachedRepoData } from '../../lib/types';
+import type { ComparisonEvaluation } from '../../lib/evaluation-loader';
+import { AIEvaluationCard } from './AIEvaluationCard';
 
 interface RepoInput {
   slug: string;
@@ -11,6 +13,7 @@ interface RepoInput {
 
 interface CompareSectionProps {
   repos: RepoInput[];
+  evaluation?: ComparisonEvaluation | null;
 }
 
 function getGradeClass(grade: string): string {
@@ -41,7 +44,7 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-export function CompareSection({ repos }: CompareSectionProps) {
+export function CompareSection({ repos, evaluation }: CompareSectionProps) {
   const [selectedLLMId, setSelectedLLMId] = useState('gpt-5.2-codex');
   const selectedLLM = getLLMById(selectedLLMId);
 
@@ -294,6 +297,9 @@ export function CompareSection({ repos }: CompareSectionProps) {
           </table>
         </div>
       </div>
+
+      {/* AI Evaluation Card - after Score by LLM */}
+      {evaluation && <AIEvaluationCard evaluation={evaluation} />}
     </div>
   );
 }
